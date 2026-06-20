@@ -51,12 +51,12 @@ class _NewReportIssueScreenState extends State<NewReportIssueScreen> {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: Colors.black87),
+          icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).textTheme.bodyLarge?.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'New Report',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -92,7 +92,7 @@ class _NewReportIssueScreenState extends State<NewReportIssueScreen> {
                       Row(
                         children: [
                           Text('Category: ', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepOrange)),
-                          Text('${widget.room!['category']}', style: TextStyle(color: Colors.black87)),
+                          Text('${widget.room!['category']}', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color)),
                         ],
                       ),
                     ],
@@ -102,7 +102,7 @@ class _NewReportIssueScreenState extends State<NewReportIssueScreen> {
               SizedBox(height: 8),
               Text(
                 'What is the issue?',
-                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 24),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 24),
               ),
               SizedBox(height: 24),
               Expanded(

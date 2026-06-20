@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "345905234462",
+    "project_id": "chugliproject65",
+    "storage_bucket": "chugliproject65.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:345905234462:android:c6a0766eb363482962240f",
+        "android_client_info": {
+          "package_name": "com.example.chugli_project65"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVM3gIp4zOZgXxjDXq9x5I1SfhwwtLtb8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -31,12 +31,12 @@ class _ReportsHistoryScreenState extends State<ReportsHistoryScreen> with Single
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: Colors.black87),
+          icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).textTheme.bodyLarge?.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Reports',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
         bottom: TabBar(
@@ -190,7 +190,7 @@ class _ReportsHistoryScreenState extends State<ReportsHistoryScreen> with Single
           SizedBox(height: 16),
           Text(
             report['issueType'],
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color),
           ),
           SizedBox(height: 8),
           if (report['roomId'] != null) ...[
@@ -241,7 +241,7 @@ class _ReportsHistoryScreenState extends State<ReportsHistoryScreen> with Single
                         SizedBox(height: 4),
                         Text(
                           report['rejectionReason'],
-                          style: TextStyle(color: Colors.black87, fontSize: 13),
+                          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 13),
                         ),
                       ],
                     ),

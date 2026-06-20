@@ -1,7 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:chugli_project65/data/services/room_data_service.dart';
+import 'package:chugli_project65/data/services/firestore_room_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:chugli_project65/features/rooms/room_conversation_screen.dart';
 import 'package:chugli_project65/features/reports/new_report_issue_screen.dart';
 import 'package:chugli_project65/features/notifications/notifications_screen.dart';
@@ -46,7 +47,7 @@ class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              RoomDataService.instance.endRoomEarly(widget.roomId);
+              FirestoreRoomService.instance.endRoom(widget.roomId);
               HapticFeedback.heavyImpact();
             },
             style: ElevatedButton.styleFrom(
@@ -107,7 +108,7 @@ class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
         children: [
           Icon(icon, color: const Color(0xFF6C47FF), size: 24),
           SizedBox(height: 12),
-          Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87)),
+          Text(value, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color)),
           SizedBox(height: 4),
           Text(title, style: TextStyle(fontSize: 12, color: Colors.grey)),
         ],
@@ -117,19 +118,21 @@ class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<List<Map<String, dynamic>>>(
-      valueListenable: RoomDataService.instance.roomsNotifier,
-      builder: (context, rooms, child) {
-        final roomIdx = rooms.indexWhere((r) => r['id'] == widget.roomId);
-        if (roomIdx == -1) {
+    return StreamBuilder<Map<String, dynamic>?>(
+      stream: FirestoreRoomService.instance.roomStream(widget.roomId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(body: Center(child: CircularProgressIndicator(color: Color(0xFF6C47FF))));
+        }
+
+        final room = snapshot.data;
+        if (room == null) {
           return const Scaffold(body: Center(child: Text('Room not found')));
         }
         
-        final room = rooms[roomIdx];
-        
         DateTime createdAt = room['createdAt'] ?? DateTime.now();
-        Duration expiryTime = room['expiryTime'] ?? const Duration(hours: 2);
-        Duration remaining = createdAt.add(expiryTime).difference(DateTime.now());
+        final DateTime expiresAt = room['expiresAt'] ?? DateTime.now();
+        Duration remaining = expiresAt.difference(DateTime.now());
         bool isExpired = remaining.isNegative;
 
         String remainingText = isExpired
@@ -154,16 +157,17 @@ class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
         final messages = List.from(room['messages'] ?? []);
         final formattedDate = '${createdAt.day}/${createdAt.month}/${createdAt.year}';
         
-        bool isCreator = room['createdBy'] == 'current_user';
+        final currentUid = FirebaseAuth.instance.currentUser?.uid;
+        bool isCreator = room['createdBy'] == currentUid;
 
         return Scaffold(
           appBar: AppBar(
             elevation: 0,
             leading: IconButton(
-              icon: Icon(Icons.arrow_back_rounded, color: Colors.black87),
+              icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).textTheme.bodyLarge?.color),
               onPressed: () => Navigator.pop(context),
             ),
-            title: Text('Room Details', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 20)),
+            title: Text('Room Details', style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 20)),
             centerTitle: true,
           ),
           body: SingleChildScrollView(
@@ -198,7 +202,7 @@ class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
                           children: [
                             Text(
                               room['title'] ?? 'Room',
-                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.black87),
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Theme.of(context).textTheme.bodyLarge?.color),
                             ),
                             SizedBox(height: 6),
                             Row(
@@ -227,7 +231,7 @@ class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
                 SizedBox(height: 24),
                 
                 // Room Info Grid
-                Text('Room Info', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                Text('Room Info', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).textTheme.bodyLarge?.color)),
                 SizedBox(height: 16),
                 GridView.count(
                   crossAxisCount: 2,
@@ -246,7 +250,7 @@ class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
                 SizedBox(height: 24),
 
                 // About this room
-                Text('About this room', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                Text('About this room', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).textTheme.bodyLarge?.color)),
                 SizedBox(height: 12),
                 Container(
                   width: double.infinity,
@@ -257,13 +261,13 @@ class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
                   ),
                   child: Text(
                     room['description']?.isNotEmpty == true ? room['description'] : 'No description provided.',
-                    style: TextStyle(color: Colors.black87, fontSize: 14, height: 1.5),
+                    style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 14, height: 1.5),
                   ),
                 ),
                 SizedBox(height: 24),
 
                 // Actions
-                Text('Actions', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                Text('Actions', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).textTheme.bodyLarge?.color)),
                 SizedBox(height: 12),
                 Container(
                   decoration: BoxDecoration(

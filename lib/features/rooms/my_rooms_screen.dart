@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:chugli_project65/data/services/room_data_service.dart';
+import 'package:chugli_project65/data/services/firestore_room_service.dart';
 import 'package:chugli_project65/features/rooms/room_details_screen.dart';
 
 class MyRoomsScreen extends StatefulWidget {
@@ -28,50 +28,39 @@ class _MyRoomsScreenState extends State<MyRoomsScreen> with SingleTickerProvider
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: Colors.black87),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
+        title: const Text(
           'My Rooms',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
       ),
-      body: ValueListenableBuilder<List<Map<String, dynamic>>>(
-        valueListenable: RoomDataService.instance.roomsNotifier,
-        builder: (context, rooms, child) {
-          
-          final createdRooms = rooms.where((r) => r['createdBy'] == 'current_user').toList();
-          
-          final joinedRooms = rooms.where((r) {
-            final joinedUsers = List<String>.from(r['joinedUsers'] ?? []);
-            return joinedUsers.contains('current_user') && r['createdBy'] != 'current_user';
-          }).toList();
-
-          final myTotalRooms = [...createdRooms, ...joinedRooms];
-
-          int activeRoomsCount = myTotalRooms.where((r) {
-            DateTime createdAt = r['createdAt'] ?? DateTime.now();
-            Duration expiryTime = r['expiryTime'] ?? const Duration(hours: 2);
-            return !createdAt.add(expiryTime).difference(DateTime.now()).isNegative;
-          }).length;
-
-          int totalMessages = 0;
-          for (var r in myTotalRooms) {
-            final messages = List<Map<String, dynamic>>.from(r['messages'] ?? []);
-            totalMessages += messages.where((m) => m['handle'] == 'Anonymous Me').length;
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: FirestoreRoomService.instance.myRoomsStream(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator(color: Color(0xFF6C47FF)));
           }
+
+          final rooms = snapshot.data ?? [];
+          final createdRooms = rooms;
+          final int activeCount = rooms.where((r) {
+            final exp = r['expiresAt'] as DateTime?;
+            return exp != null && exp.isAfter(DateTime.now());
+          }).length;
 
           return NestedScrollView(
             headerSliverBuilder: (context, innerBoxIsScrolled) {
               return [
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: _buildStatisticsSection(createdRooms.length, joinedRooms.length, activeRoomsCount, totalMessages),
+                    padding: const EdgeInsets.all(16.0),
+                    child: _buildStatisticsSection(createdRooms.length, 0, activeCount, 0),
                   ),
                 ),
                 SliverPersistentHeader(
@@ -82,7 +71,7 @@ class _MyRoomsScreenState extends State<MyRoomsScreen> with SingleTickerProvider
                       indicatorColor: const Color(0xFF6C47FF),
                       labelColor: const Color(0xFF6C47FF),
                       unselectedLabelColor: Colors.grey,
-                      labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       indicatorWeight: 3,
                       tabs: const [
                         Tab(text: 'Created'),
@@ -97,7 +86,7 @@ class _MyRoomsScreenState extends State<MyRoomsScreen> with SingleTickerProvider
               controller: _tabController,
               children: [
                 _buildRoomList(createdRooms),
-                _buildRoomList(joinedRooms),
+                _buildRoomList(const []), // joined rooms — future feature
               ],
             ),
           );
@@ -189,9 +178,8 @@ class _MyRoomsScreenState extends State<MyRoomsScreen> with SingleTickerProvider
   }
 
   Widget _buildRoomCard(Map<String, dynamic> room) {
-    DateTime createdAt = room['createdAt'] ?? DateTime.now();
-    Duration expiryTime = room['expiryTime'] ?? const Duration(hours: 2);
-    Duration remaining = createdAt.add(expiryTime).difference(DateTime.now());
+    final DateTime expiresAt = room['expiresAt'] ?? DateTime.now();
+    Duration remaining = expiresAt.difference(DateTime.now());
     bool isExpired = remaining.isNegative;
 
     String remainingText = isExpired
@@ -252,7 +240,7 @@ class _MyRoomsScreenState extends State<MyRoomsScreen> with SingleTickerProvider
                   children: [
                     Text(
                       room['title'] ?? 'Room',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).textTheme.bodyLarge?.color),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

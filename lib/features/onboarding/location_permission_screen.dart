@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'dart:math' as math;
+import 'package:chugli_project65/data/services/location_service.dart';
 import 'package:chugli_project65/features/onboarding/anonymous_handle_screen.dart';
-// import 'package:permission_handler/permission_handler.dart'; 
 
 class LocationPermissionScreen extends StatefulWidget {
   const LocationPermissionScreen({super.key});
@@ -35,18 +35,30 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
 
   Future<void> _handlePermissionRequest() async {
     HapticFeedback.mediumImpact();
-    
-    // Logic for permission_handler:
-    /*
-    PermissionStatus status = await Permission.location.request();
-    if (status.isGranted) {
-      _navigateToNext();
-    } else if (status.isPermanentlyDenied) {
-      openAppSettings();
+
+    final result = await LocationService.instance.getCurrentLocation();
+
+    if (!mounted) return;
+
+    if (result.status == LocationStatus.deniedForever) {
+      // Show dialog asking user to open settings
+      _showOpenSettingsDialog();
+      return;
     }
-    */
-    
-    // Simulating navigation for now
+
+    if (result.status == LocationStatus.serviceDisabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enable Location Services in your device settings.'),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      await LocationService.instance.openSettings();
+      return;
+    }
+
+    // Whether granted or simply denied, proceed to next screen.
     _navigateToNext();
   }
 
@@ -54,6 +66,51 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const AnonymousHandleScreen()),
+    );
+  }
+
+  void _showOpenSettingsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text(
+          "Location Blocked",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+        ),
+        content: const Text(
+          "Location access is blocked. Please go to Settings → ChugLi → Location and set it to \"While Using\".",
+          style: TextStyle(color: Colors.grey, fontSize: 16),
+        ),
+        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _navigateToNext();
+            },
+            child: const Text(
+              "Skip",
+              style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              LocationService.instance.openSettings();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6C47FF),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
+            ),
+            child: const Text("Open Settings"),
+          ),
+        ],
+      ),
     );
   }
 
@@ -127,7 +184,7 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
                   style: TextStyle(
                     fontSize: 30,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
                     height: 1.2,
                     letterSpacing: -0.5,
                   ),

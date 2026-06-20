@@ -12,12 +12,12 @@ class ChugliFlowScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: Colors.black87),
+          icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).textTheme.bodyLarge?.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'The ChugLi Flow',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -29,7 +29,7 @@ class ChugliFlowScreen extends StatelessWidget {
           children: [
             Text(
               'Flow Timeline',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.black87),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).textTheme.bodyLarge?.color),
             ),
             SizedBox(height: 16),
             Container(
@@ -41,12 +41,12 @@ class ChugliFlowScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildTimelineItem('1.', 'Set Your Radius', 'Choose a radius (0.5km–5km) to find people around you.', Icons.my_location_rounded, Colors.orange),
-                  _buildTimelineItem('2.', 'Pick Your Interests', 'Select topics you care about.', Icons.favorite_rounded, Colors.pink),
-                  _buildTimelineItem('3.', 'Join or Create a Room', 'Join an existing room or create your own.', Icons.add_circle_rounded, Colors.green),
-                  _buildTimelineItem('4.', 'Chat Anonymously', 'Talk in real time.\nNo names.\nNo profiles.', Icons.forum_rounded, const Color(0xFF6C47FF)),
-                  _buildTimelineItem('5.', 'Room Expires', 'Rooms end when the timer is up.', Icons.timer_rounded, const Color(0xFFFFC83D)),
-                  _buildTimelineItem('6.', 'Stay Safe', 'Report issues.\nOur moderators keep ChugLi safe.', Icons.shield_rounded, const Color(0xFF00C48C), isLast: true),
+                  _buildTimelineItem(context, '1.', 'Set Your Radius', 'Choose a radius (0.5km–5km) to find people around you.', Icons.my_location_rounded, Colors.orange),
+                  _buildTimelineItem(context, '2.', 'Pick Your Interests', 'Select topics you care about.', Icons.favorite_rounded, Colors.pink),
+                  _buildTimelineItem(context, '3.', 'Join or Create a Room', 'Join an existing room or create your own.', Icons.add_circle_rounded, Colors.green),
+                  _buildTimelineItem(context, '4.', 'Chat Anonymously', 'Talk in real time.\nNo names.\nNo profiles.', Icons.forum_rounded, const Color(0xFF6C47FF)),
+                  _buildTimelineItem(context, '5.', 'Room Expires', 'Rooms end when the timer is up.', Icons.timer_rounded, const Color(0xFFFFC83D)),
+                  _buildTimelineItem(context, '6.', 'Stay Safe', 'Report issues.\nOur moderators keep ChugLi safe.', Icons.shield_rounded, const Color(0xFF00C48C), isLast: true),
                 ],
               ),
             ),
@@ -54,7 +54,7 @@ class ChugliFlowScreen extends StatelessWidget {
 
             Text(
               'Things to Remember',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.black87),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).textTheme.bodyLarge?.color),
             ),
             SizedBox(height: 16),
             Container(
@@ -66,13 +66,13 @@ class ChugliFlowScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildRememberItem('You are anonymous.', 'Others cannot see who you are.'),
+                  _buildRememberItem(context, 'You are anonymous.', 'Others cannot see who you are.'),
                   const Divider(height: 24),
-                  _buildRememberItem('Be kind and respect others.', null),
+                  _buildRememberItem(context, 'Be kind and respect others.', null),
                   const Divider(height: 24),
-                  _buildRememberItem('You can report inappropriate content.', null),
+                  _buildRememberItem(context, 'You can report inappropriate content.', null),
                   const Divider(height: 24),
-                  _buildRememberItem('We never store personal chat data.', null),
+                  _buildRememberItem(context, 'We never store personal chat data.', null),
                 ],
               ),
             ),
@@ -105,7 +105,7 @@ class ChugliFlowScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildTimelineItem(String number, String title, String subtitle, IconData icon, Color color, {bool isLast = false}) {
+  Widget _buildTimelineItem(BuildContext context, String number, String title, String subtitle, IconData icon, Color color, {bool isLast = false}) {
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -135,7 +135,7 @@ class ChugliFlowScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(height: 12),
-                  Text('$number $title', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+                  Text('$number $title', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).textTheme.bodyLarge?.color)),
                   SizedBox(height: 6),
                   Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.4)),
                 ],
@@ -147,7 +147,7 @@ class ChugliFlowScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRememberItem(String title, String? subtitle) {
+  Widget _buildRememberItem(BuildContext context, String title, String? subtitle) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -157,7 +157,7 @@ class ChugliFlowScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
+              Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Theme.of(context).textTheme.bodyLarge?.color)),
               if (subtitle != null) ...[
                 SizedBox(height: 4),
                 Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),

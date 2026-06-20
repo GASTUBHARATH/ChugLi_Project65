@@ -69,12 +69,12 @@ class _NewReportDetailsScreenState extends State<NewReportDetailsScreen> {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: Colors.black87),
+          icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).textTheme.bodyLarge?.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'New Report',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -91,13 +91,13 @@ class _NewReportDetailsScreenState extends State<NewReportDetailsScreen> {
               SizedBox(height: 8),
               Text(
                 'Additional Details',
-                style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 24),
+                style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 24),
               ),
               SizedBox(height: 24),
               
               Text(
                 'Describe what happened',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).textTheme.bodyLarge?.color),
               ),
               SizedBox(height: 12),
               TextField(
@@ -124,7 +124,7 @@ class _NewReportDetailsScreenState extends State<NewReportDetailsScreen> {
                 children: [
                   Text(
                     'Optional Screenshots',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).textTheme.bodyLarge?.color),
                   ),
                   Text(
                     '${_simulatedScreenshots.length}/3',

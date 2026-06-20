@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:chugli_project65/features/onboarding/welcome_screen.dart';
 import 'package:chugli_project65/features/profile/change_handle_screen.dart';
 import 'package:chugli_project65/features/profile/interests_screen.dart';
 import 'package:chugli_project65/features/notifications/notifications_screen.dart';
@@ -210,6 +213,9 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySafetyScreen()));
           } else if (index == 9) {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
+          } else if (index == 10) {
+            // Delete Account from drawer
+            _showDeleteAccountDialog();
           }
         },
         borderRadius: BorderRadius.circular(20),
@@ -274,6 +280,100 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
         ),
       ),
     );
+  }
+
+  void _showDeleteAccountDialog() {
+    Navigator.pop(context); // Close drawer first
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 26),
+            SizedBox(width: 8),
+            Text('Delete Account', style: TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          'This will permanently delete your account and all your data. This cannot be undone.',
+          style: TextStyle(color: Colors.grey[700]),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await _performDeleteAccount();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _performDeleteAccount() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(
+          child: CircularProgressIndicator(color: Color(0xFF6C47FF)),
+        ),
+      );
+    }
+
+    try {
+      final uid = user.uid;
+      final db = FirebaseFirestore.instance;
+
+      final activitySnap = await db
+          .collection('users')
+          .doc(uid)
+          .collection('activity')
+          .get();
+      for (final doc in activitySnap.docs) {
+        await doc.reference.delete();
+      }
+
+      await db.collection('users').doc(uid).delete();
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+
+      await user.delete();
+
+      if (mounted) {
+        Navigator.pop(context); // Dismiss loading
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to delete account: $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildProfileSection() {

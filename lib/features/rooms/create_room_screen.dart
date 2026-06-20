@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:chugli_project65/data/services/room_data_service.dart';
-import 'dart:math';
+import 'package:chugli_project65/data/services/firestore_room_service.dart';
+import 'package:chugli_project65/data/services/location_service.dart';
 
 class CreateRoomScreen extends StatefulWidget {
   const CreateRoomScreen({super.key});
@@ -18,6 +18,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
   String _selectedExpiry = '2h';
   String _selectedParticipants = '50';
   String _selectedVisibility = 'Public';
+  bool _isCreating = false; // loading state
 
   final List<Map<String, String>> _categories = [
     {'emoji': '❓', 'label': 'Question'},
@@ -40,56 +41,57 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
     super.dispose();
   }
 
-  void _createRoom() {
+  void _createRoom() async {
     if (_titleController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Room title is required'),
-          backgroundColor: Colors.redAccent,
-        ),
+        const SnackBar(content: Text('Room title is required'), backgroundColor: Colors.redAccent),
       );
       return;
     }
     if (_selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a category'),
-          backgroundColor: Colors.redAccent,
-        ),
+        const SnackBar(content: Text('Please select a category'), backgroundColor: Colors.redAccent),
       );
       return;
     }
 
-    Duration expiryDuration;
-    switch (_selectedExpiry) {
-      case '30m': expiryDuration = const Duration(minutes: 30); break;
-      case '6h': expiryDuration = const Duration(hours: 6); break;
-      case '24h': expiryDuration = const Duration(hours: 24); break;
-      case '2h':
-      default: expiryDuration = const Duration(hours: 2); break;
+    setState(() => _isCreating = true);
+
+    try {
+      Duration expiryDuration;
+      switch (_selectedExpiry) {
+        case '30m': expiryDuration = const Duration(minutes: 30); break;
+        case '6h':  expiryDuration = const Duration(hours: 6);    break;
+        case '24h': expiryDuration = const Duration(hours: 24);   break;
+        default:    expiryDuration = const Duration(hours: 2);    break;
+      }
+
+      final pos = LocationService.instance.lastPosition;
+
+      await FirestoreRoomService.instance.createRoom(
+        title: _titleController.text.trim(),
+        category: _selectedCategory!,
+        description: _descriptionController.text.trim(),
+        expiryDuration: expiryDuration,
+        maxParticipants: _selectedParticipants,
+        visibility: _selectedVisibility,
+        latitude: pos?.latitude,
+        longitude: pos?.longitude,
+      );
+
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isCreating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create room: ${e.toString()}'),
+            backgroundColor: Colors.redAccent,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
     }
-
-    final newRoom = {
-      'id': DateTime.now().millisecondsSinceEpoch.toString() + Random().nextInt(1000).toString(),
-      'title': _titleController.text.trim(),
-      'category': _selectedCategory!,
-      'description': _descriptionController.text.trim(),
-      'preview': 'Room created! Start the conversation...',
-      'expiryTime': expiryDuration,
-      'createdAt': DateTime.now(),
-      'participants': 1, // Only the creator initially
-      'maxParticipants': _selectedParticipants,
-      'visibility': _selectedVisibility,
-      'isHighActivity': false,
-      'createdBy': 'current_user',
-      'joinedUsers': <String>['current_user'],
-      'reactions': <String>[],
-      'messages': <Map<String, dynamic>>[],
-    };
-
-    RoomDataService.instance.addRoom(newRoom);
-
-    Navigator.pop(context);
   }
 
   @override
@@ -98,13 +100,13 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       appBar: AppBar(
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: Colors.black87),
+          icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).textTheme.bodyLarge?.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Create Room',
           style: TextStyle(
-            color: Colors.black87,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
             fontWeight: FontWeight.bold,
             fontSize: 20,
           ),
@@ -123,7 +125,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             SizedBox(height: 8),
@@ -154,7 +156,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             SizedBox(height: 12),
@@ -230,7 +232,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             SizedBox(height: 8),
@@ -262,7 +264,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             SizedBox(height: 12),
@@ -311,7 +313,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             SizedBox(height: 12),
@@ -354,7 +356,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
               style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
               ),
             ),
             SizedBox(height: 12),
@@ -426,24 +428,31 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                 ],
               ),
               child: ElevatedButton(
-                onPressed: _createRoom,
+                onPressed: _isCreating ? null : _createRoom,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,
-                  padding: EdgeInsets.symmetric(vertical: 18),
+                  padding: const EdgeInsets.symmetric(vertical: 18),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
-                child: Text(
-                  'Create Room',
-                  style: TextStyle(
-                    color: Theme.of(context).cardColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+                child: _isCreating
+                    ? const SizedBox(
+                        height: 22, width: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white, strokeWidth: 2.5,
+                        ),
+                      )
+                    : Text(
+                        'Create Room',
+                        style: TextStyle(
+                          color: Theme.of(context).cardColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
               ),
             ),
             SizedBox(height: 40),

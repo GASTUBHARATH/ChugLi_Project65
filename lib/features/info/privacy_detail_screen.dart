@@ -42,7 +42,7 @@ class PrivacyDetailScreen extends StatelessWidget {
               content,
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.black87,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
                 height: 1.6,
               ),
             ),

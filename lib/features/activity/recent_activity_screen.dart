@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:chugli_project65/data/services/activity_data_service.dart';
+import 'package:chugli_project65/data/services/firestore_room_service.dart';
 import 'package:chugli_project65/features/activity/activity_details_screen.dart';
 
 class RecentActivityScreen extends StatefulWidget {
@@ -23,9 +23,6 @@ class _RecentActivityScreenState extends State<RecentActivityScreen> with Single
   void initState() {
     super.initState();
     _tabController = TabController(length: _tabs.length, vsync: this);
-    ActivityDataService.instance.initialize().then((_) {
-      if (mounted) setState(() {});
-    });
   }
 
   @override
@@ -77,9 +74,14 @@ class _RecentActivityScreenState extends State<RecentActivityScreen> with Single
         ),
       ),
       body: SafeArea(
-        child: ValueListenableBuilder<List<Map<String, dynamic>>>(
-          valueListenable: ActivityDataService.instance.activitiesNotifier,
-          builder: (context, activities, child) {
+        child: StreamBuilder<List<Map<String, dynamic>>>(
+          stream: FirestoreRoomService.instance.activitiesStream(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(color: Color(0xFF6C47FF)));
+            }
+
+            List<Map<String, dynamic>> activities = snapshot.data ?? [];
             List<Map<String, dynamic>> filtered = activities;
             
             // Filter by search query

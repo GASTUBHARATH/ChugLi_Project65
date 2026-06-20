@@ -17,7 +17,7 @@ class LanguageUpdatedScreen extends StatelessWidget {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00C48C).withOpacity(0.1),
+                  color: const Color(0xFF00C48C).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -48,7 +48,7 @@ class LanguageUpdatedScreen extends StatelessWidget {
                     padding: EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     elevation: 5,
-                    shadowColor: const Color(0xFF6C47FF).withOpacity(0.5),
+                    shadowColor: const Color(0xFF6C47FF).withValues(alpha: 0.5),
                   ),
                   child: Text(
                     'Return to Settings',

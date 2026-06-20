@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chugli_project65/data/services/firestore_room_service.dart';
 import 'package:chugli_project65/features/home/home_feed_screen.dart';
 
 class InterestQuickPickScreen extends StatefulWidget {
@@ -145,6 +146,18 @@ class _InterestQuickPickScreenState extends State<InterestQuickPickScreen> {
         debugPrint("Before saving: ${_selectedInterests.toList()}");
         final prefs = await SharedPreferences.getInstance();
         await prefs.setStringList('selected_interests', _selectedInterests.toList());
+        
+        // Save to Firestore
+        final handle = prefs.getString('userHandle') ?? 'Anonymous';
+        try {
+          await FirestoreRoomService.instance.saveUserProfile(
+            handle: handle,
+            interests: _selectedInterests.toList(),
+          );
+        } catch (e) {
+          debugPrint("Error saving interests to Firestore: $e");
+        }
+
         debugPrint("After saving: ${_selectedInterests.toList()}");
         debugPrint("Saved interests: ${_selectedInterests.toList()}");
         

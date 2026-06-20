@@ -12,12 +12,12 @@ class HowChugLiWorksScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: Colors.black87),
+          icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).textTheme.bodyLarge?.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'How ChugLi Works',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -79,7 +79,7 @@ class HowChugLiWorksScreen extends StatelessWidget {
               children: [
                 Text(
                   'The ChugLi Flow',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.black87),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).textTheme.bodyLarge?.color),
                 ),
                 TextButton(
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChugliFlowScreen())),
@@ -102,13 +102,13 @@ class HowChugLiWorksScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _buildFlowStep('1', 'Set Radius', 'Choose how far you want to connect.', Icons.location_on_rounded, Colors.orange),
+                    _buildFlowStep(context, '1', 'Set Radius', 'Choose how far you want to connect.', Icons.location_on_rounded, Colors.orange),
                     _buildFlowArrow(),
-                    _buildFlowStep('2', 'Pick Interests', 'We show rooms based on your interests.', Icons.favorite_rounded, Colors.pink),
+                    _buildFlowStep(context, '2', 'Pick Interests', 'We show rooms based on your interests.', Icons.favorite_rounded, Colors.pink),
                     _buildFlowArrow(),
-                    _buildFlowStep('3', 'Join / Create', 'Enter a room or create your own.', Icons.add_circle_rounded, Colors.green),
+                    _buildFlowStep(context, '3', 'Join / Create', 'Enter a room or create your own.', Icons.add_circle_rounded, Colors.green),
                     _buildFlowArrow(),
-                    _buildFlowStep('4', 'Chat & Connect', 'Have real-time anonymous conversations.', Icons.forum_rounded, const Color(0xFF6C47FF)),
+                    _buildFlowStep(context, '4', 'Chat & Connect', 'Have real-time anonymous conversations.', Icons.forum_rounded, const Color(0xFF6C47FF)),
                   ],
                 ),
               ),
@@ -118,7 +118,7 @@ class HowChugLiWorksScreen extends StatelessWidget {
             // Why ChugLi Section
             Text(
               'Why ChugLi',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.black87),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).textTheme.bodyLarge?.color),
             ),
             SizedBox(height: 16),
             GridView.count(
@@ -140,7 +140,7 @@ class HowChugLiWorksScreen extends StatelessWidget {
             // Key Features
             Text(
               'Key Features',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.black87),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).textTheme.bodyLarge?.color),
             ),
             SizedBox(height: 16),
             Container(
@@ -152,15 +152,15 @@ class HowChugLiWorksScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildFeatureRow('Create or join real-time chat rooms'),
+                  _buildFeatureRow(context, 'Create or join real-time chat rooms'),
                   const Divider(height: 24),
-                  _buildFeatureRow('Rooms auto-expire after the timer ends'),
+                  _buildFeatureRow(context, 'Rooms auto-expire after the timer ends'),
                   const Divider(height: 24),
-                  _buildFeatureRow('Report issues and help keep ChugLi safe'),
+                  _buildFeatureRow(context, 'Report issues and help keep ChugLi safe'),
                   const Divider(height: 24),
-                  _buildFeatureRow('Custom radius & interest-based discovery'),
+                  _buildFeatureRow(context, 'Custom radius & interest-based discovery'),
                   const Divider(height: 24),
-                  _buildFeatureRow('No personal data. Your privacy is our priority.'),
+                  _buildFeatureRow(context, 'No personal data. Your privacy is our priority.'),
                 ],
               ),
             ),
@@ -189,7 +189,7 @@ class HowChugLiWorksScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFlowStep(String number, String title, String subtitle, IconData icon, Color color) {
+  Widget _buildFlowStep(BuildContext context, String number, String title, String subtitle, IconData icon, Color color) {
     return Row(
       children: [
         Container(
@@ -203,7 +203,7 @@ class HowChugLiWorksScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('$number. $title', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+              Text('$number. $title', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).textTheme.bodyLarge?.color)),
               SizedBox(height: 4),
               Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
             ],
@@ -242,7 +242,7 @@ class HowChugLiWorksScreen extends StatelessWidget {
             child: Icon(icon, color: color, size: 24),
           ),
           const Spacer(),
-          Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.black87)),
+          Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Theme.of(context).textTheme.bodyLarge?.color)),
           SizedBox(height: 6),
           Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 12, height: 1.3)),
         ],
@@ -250,13 +250,13 @@ class HowChugLiWorksScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatureRow(String text) {
+  Widget _buildFeatureRow(BuildContext context, String text) {
     return Row(
       children: [
         Icon(Icons.check_circle_rounded, color: Color(0xFF00C48C), size: 20),
         SizedBox(width: 12),
         Expanded(
-          child: Text(text, style: TextStyle(color: Colors.black87, fontSize: 14, fontWeight: FontWeight.w500)),
+          child: Text(text, style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 14, fontWeight: FontWeight.w500)),
         ),
       ],
     );

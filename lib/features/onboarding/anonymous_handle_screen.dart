@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chugli_project65/data/services/firestore_room_service.dart';
 import 'package:chugli_project65/features/onboarding/interest_quick_pick_screen.dart';
 
 class AnonymousHandleScreen extends StatefulWidget {
@@ -66,6 +67,13 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
       HapticFeedback.mediumImpact();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('userHandle', handle);
+
+      // Save handle to Firestore
+      try {
+        await FirestoreRoomService.instance.saveUserProfile(handle: handle);
+      } catch (e) {
+        debugPrint("Error saving handle to Firestore: $e");
+      }
 
       if (!mounted) return;
       Navigator.push(

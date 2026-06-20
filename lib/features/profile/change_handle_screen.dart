@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chugli_project65/data/services/activity_data_service.dart';
+import 'package:chugli_project65/data/services/firestore_room_service.dart';
 
 class ChangeHandleScreen extends StatefulWidget {
   const ChangeHandleScreen({super.key});
@@ -43,6 +44,20 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
   }
 
   Future<void> _loadCurrentHandle() async {
+    try {
+      final firestoreHandle = await FirestoreRoomService.instance.getUserHandle();
+      if (firestoreHandle != null && firestoreHandle.isNotEmpty) {
+        setState(() {
+          _currentHandle = firestoreHandle;
+        });
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('userHandle', firestoreHandle);
+        return;
+      }
+    } catch (e) {
+      debugPrint("Error fetching handle from Firestore: $e");
+    }
+
     final prefs = await SharedPreferences.getInstance();
     final handle = prefs.getString('userHandle');
     if (handle != null && handle.isNotEmpty) {
@@ -80,6 +95,12 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
       HapticFeedback.mediumImpact();
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('userHandle', handle);
+
+      try {
+        await FirestoreRoomService.instance.saveUserProfile(handle: handle);
+      } catch (e) {
+        debugPrint("Error saving handle to Firestore: $e");
+      }
 
       ActivityDataService.instance.addActivity(
         title: 'Handle Changed',

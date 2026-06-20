@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:chugli_project65/data/services/room_data_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:chugli_project65/data/services/firestore_room_service.dart';
 import 'package:chugli_project65/features/rooms/create_room_screen.dart';
 
 class RoomConversationScreen extends StatefulWidget {
@@ -16,19 +18,32 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   Timer? _timer;
-  
+  int _lastMessageCount = 0;
+
+  // The current user's Firebase UID — used to identify "my" messages.
+  final String _myUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+
   String? _selectedTag;
-  
+
   final List<String> _tags = [
     'Question', 'Help', 'Confession', 'Advice', 'Funny', 'Poll', 'Networking', 'Recommendation'
   ];
 
   final List<String> _emojis = ['😂', '❤️', '🔥', '👍', '😢', '😮', '😡', '💯'];
 
+  late final Stream<Map<String, dynamic>?> _roomStream;
+  late final Stream<List<Map<String, dynamic>>> _messagesStream;
+
   @override
   void initState() {
     super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => setState(() {}));
+    _roomStream = FirestoreRoomService.instance.roomStream(widget.roomId);
+    _messagesStream = FirestoreRoomService.instance.messagesStream(widget.roomId);
+
+    // Rebuild every second so the countdown timer stays accurate.
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -39,40 +54,34 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
     super.dispose();
   }
 
-  Map<String, dynamic>? get _room {
-    final rooms = RoomDataService.instance.roomsNotifier.value;
-    final idx = rooms.indexWhere((r) => r['id'] == widget.roomId);
-    if (idx != -1) return rooms[idx];
-    return null;
-  }
+  void _sendMessage() async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
 
-  void _sendMessage() {
-    if (_messageController.text.trim().isEmpty) return;
-    
-    final message = {
-      'id': DateTime.now().millisecondsSinceEpoch.toString(),
-      'handle': 'Anonymous Me', // Dummy handle
-      'text': _messageController.text.trim(),
-      'timestamp': DateTime.now(),
-      'tag': _selectedTag,
-      'reactions': <String>[],
-    };
-    
-    RoomDataService.instance.addMessage(widget.roomId, message);
     _messageController.clear();
-    setState(() {
-      _selectedTag = null;
-    });
-    
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
+    if (mounted) setState(() => _selectedTag = null);
+
+    final prefs = await SharedPreferences.getInstance();
+    final handle = prefs.getString('userHandle') ?? 'Anonymous';
+
+    try {
+      await FirestoreRoomService.instance.sendMessage(
+        roomId: widget.roomId,
+        handle: handle,
+        text: text,
+        tag: _selectedTag,
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send: $e'),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       }
-    });
+    }
   }
 
   void _showTagSelector() {
@@ -84,13 +93,13 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Select a Tag', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                SizedBox(height: 16),
+                const Text('Select a Tag', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 16),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -128,13 +137,13 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Quick Emojis', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                SizedBox(height: 16),
+                const Text('Quick Emojis', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                const SizedBox(height: 16),
                 Wrap(
                   spacing: 16,
                   runSpacing: 16,
@@ -143,7 +152,7 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
                       _messageController.text += e;
                       Navigator.pop(context);
                     },
-                    child: Text(e, style: TextStyle(fontSize: 32)),
+                    child: Text(e, style: const TextStyle(fontSize: 32)),
                   )).toList(),
                 )
               ],
@@ -163,16 +172,16 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
       builder: (context) {
         return SafeArea(
           child: Padding(
-            padding: EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16.0),
             child: Wrap(
               spacing: 16,
               runSpacing: 16,
               children: _emojis.map((e) => GestureDetector(
                 onTap: () {
-                  RoomDataService.instance.addReaction(widget.roomId, messageId, e);
+                  FirestoreRoomService.instance.addReaction(widget.roomId, messageId, e);
                   Navigator.pop(context);
                 },
-                child: Text(e, style: TextStyle(fontSize: 32)),
+                child: Text(e, style: const TextStyle(fontSize: 32)),
               )).toList(),
             ),
           ),
@@ -183,17 +192,40 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<List<Map<String, dynamic>>>(
-      valueListenable: RoomDataService.instance.roomsNotifier,
-      builder: (context, rooms, child) {
-        final room = _room;
-        if (room == null) return const Scaffold(body: Center(child: Text('Room not found')));
+    return StreamBuilder<Map<String, dynamic>?>(
+      stream: _roomStream,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+                    const SizedBox(height: 16),
+                    Text('Error: ${snapshot.error}',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(color: Colors.grey)),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
 
-        DateTime createdAt = room['createdAt'] ?? DateTime.now();
-        Duration expiryTime = room['expiryTime'] ?? const Duration(hours: 2);
-        DateTime expiryDate = createdAt.add(expiryTime);
-        Duration remaining = expiryDate.difference(DateTime.now());
-        
+        final room = snapshot.data;
+
+        if (room == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator(color: Color(0xFF6C47FF))),
+          );
+        }
+
+        final DateTime expiresAt =
+            room['expiresAt'] ?? DateTime.now().add(const Duration(hours: 2));
+        Duration remaining = expiresAt.difference(DateTime.now());
         bool isExpired = remaining.isNegative;
 
         return Scaffold(
@@ -203,7 +235,7 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
               Column(
                 children: [
                   if (!isExpired && remaining.inMinutes < 15) _buildExpiryWarning(),
-                  Expanded(child: _buildMessageList(room['messages'] ?? [])),
+                  Expanded(child: _buildMessageList(widget.roomId)),
                   if (!isExpired) _buildChatInput(),
                 ],
               ),
@@ -216,6 +248,7 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
   }
 
   PreferredSizeWidget _buildAppBar(Map<String, dynamic> room, Duration remaining) {
+    final int participantCount = room['participants'] as int? ?? 1;
     String remainingText = remaining.isNegative
         ? 'Expired'
         : remaining.inHours > 0
@@ -223,10 +256,10 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
             : '${remaining.inMinutes}m remaining';
 
     return AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).cardColor,
       elevation: 1,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back_rounded, color: Colors.black87),
+        icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).textTheme.bodyLarge?.color),
         onPressed: () => Navigator.pop(context),
       ),
       title: Column(
@@ -234,21 +267,32 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
         children: [
           Text(
             room['title'] ?? 'Room',
-            style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18),
+            style: TextStyle(
+                color: Theme.of(context).textTheme.bodyLarge?.color,
+                fontWeight: FontWeight.bold,
+                fontSize: 16),
           ),
-          SizedBox(height: 2),
+          const SizedBox(height: 2),
           Row(
             children: [
-              Text(
-                '${room['participants']} Participants',
-                style: TextStyle(color: Color(0xFF6C47FF), fontSize: 12, fontWeight: FontWeight.w600),
+              Container(
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(color: Colors.green, shape: BoxShape.circle),
               ),
-              SizedBox(width: 8),
-              Container(width: 4, height: 4, decoration: BoxDecoration(color: Colors.grey, shape: BoxShape.circle)),
-              SizedBox(width: 8),
+              const SizedBox(width: 5),
+              Text(
+                '$participantCount ${participantCount == 1 ? "person" : "people"} joined',
+                style: const TextStyle(color: Color(0xFF6C47FF), fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(width: 8),
+              Container(width: 3, height: 3, decoration: const BoxDecoration(color: Colors.grey, shape: BoxShape.circle)),
+              const SizedBox(width: 8),
               Text(
                 remainingText,
-                style: TextStyle(color: remaining.isNegative ? Colors.red : Colors.grey.shade700, fontSize: 12),
+                style: TextStyle(
+                    color: remaining.isNegative ? Colors.red : Colors.grey.shade600,
+                    fontSize: 12),
               ),
             ],
           )
@@ -257,47 +301,117 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
     );
   }
 
-  Widget _buildMessageList(List<dynamic> messages) {
+  Widget _buildMessageList(String roomId) {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _messagesStream,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('Could not load messages.\n${snapshot.error}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.grey)),
+          );
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator(color: Color(0xFF6C47FF)));
+        }
+        final messages = snapshot.data ?? [];
+
+        if (messages.isEmpty) {
+          return const Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('🗨️', style: TextStyle(fontSize: 48)),
+                SizedBox(height: 16),
+                Text('No messages yet.\nBe the first to say something!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Colors.grey, fontSize: 16)),
+              ],
+            ),
+          );
+        }
+
+        // Auto-scroll when new messages arrive
+        if (messages.length > _lastMessageCount) {
+          _lastMessageCount = messages.length;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (_scrollController.hasClients) {
+              _scrollController.animateTo(
+                _scrollController.position.maxScrollExtent,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOut,
+              );
+            }
+          });
+        }
+        return _buildMessageListView(messages);
+      },
+    );
+  }
+
+  Widget _buildMessageListView(List<Map<String, dynamic>> messages) {
     return ListView.builder(
       controller: _scrollController,
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
       itemCount: messages.length,
       itemBuilder: (context, index) {
         final msg = messages[index];
-        bool isMe = msg['handle'] == 'Anonymous Me';
-        
-        DateTime ts = msg['timestamp'] ?? DateTime.now();
-        String timeStr = '${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}';
+
+        // ✅ CORRECT: compare Firebase UID stored in the message.
+        final bool isMe = (msg['uid'] as String?) == _myUid && _myUid.isNotEmpty;
+
+        final DateTime ts = msg['timestamp'] ?? DateTime.now();
+        final String timeStr =
+            '${ts.hour.toString().padLeft(2, '0')}:${ts.minute.toString().padLeft(2, '0')}';
 
         return Align(
           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
-            margin: EdgeInsets.only(bottom: 16),
-            constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+            margin: const EdgeInsets.only(bottom: 16),
+            constraints: BoxConstraints(
+                maxWidth: MediaQuery.of(context).size.width * 0.75),
             child: Column(
-              crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      msg['handle'],
-                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
-                    ),
-                    SizedBox(width: 8),
-                    Text(timeStr, style: TextStyle(fontSize: 10, color: Colors.grey)),
+                    if (!isMe) ...[
+                      Text(
+                        msg['handle'] ?? 'Anonymous',
+                        style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(timeStr,
+                        style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                    if (isMe) ...[
+                      const SizedBox(width: 8),
+                      const Text('You',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey)),
+                    ],
                   ],
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 GestureDetector(
                   onLongPress: () {
                     HapticFeedback.lightImpact();
                     _addReaction(msg['id']);
                   },
                   child: Container(
-                    padding: EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: isMe ? const Color(0xFF6C47FF) : Colors.white,
+                      color: isMe
+                          ? const Color(0xFF6C47FF)
+                          : Theme.of(context).cardColor,
                       borderRadius: BorderRadius.only(
                         topLeft: const Radius.circular(16),
                         topRight: const Radius.circular(16),
@@ -306,8 +420,8 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.05),
-                          blurRadius: 4,
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 6,
                           offset: const Offset(0, 2),
                         )
                       ],
@@ -317,9 +431,12 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
                       children: [
                         if (msg['tag'] != null) ...[
                           Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: isMe ? Colors.white.withOpacity(0.2) : Theme.of(context).scaffoldBackgroundColor,
+                              color: isMe
+                                  ? Colors.white.withOpacity(0.2)
+                                  : Theme.of(context).scaffoldBackgroundColor,
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
@@ -327,25 +444,38 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
                               style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
-                                color: isMe ? Colors.white : const Color(0xFF6C47FF),
+                                color: isMe
+                                    ? Colors.white
+                                    : const Color(0xFF6C47FF),
                               ),
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                         ],
                         Text(
-                          msg['text'],
-                          style: TextStyle(color: isMe ? Colors.white : Colors.black87, fontSize: 15),
+                          msg['text'] ?? '',
+                          style: TextStyle(
+                            color: isMe
+                                ? Colors.white
+                                : (Theme.of(context)
+                                        .textTheme
+                                        .bodyLarge
+                                        ?.color ??
+                                    Colors.black87),
+                            fontSize: 15,
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-                if ((msg['reactions'] as List).isNotEmpty) ...[
-                  SizedBox(height: 4),
+                if ((msg['reactions'] as List? ?? []).isNotEmpty) ...[
+                  const SizedBox(height: 4),
                   Wrap(
                     spacing: 4,
-                    children: _buildReactionStack(context, List<String>.from(msg['reactions'] ?? [])),
+                    children: _buildReactionChips(
+                        context,
+                        List<String>.from(msg['reactions'] ?? [])),
                   )
                 ]
               ],
@@ -356,26 +486,29 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
     );
   }
 
-  List<Widget> _buildReactionStack(context, List<String> reactions) {
-    Map<String, int> counts = {};
-    for (var r in reactions) {
+  List<Widget> _buildReactionChips(BuildContext context, List<String> reactions) {
+    final Map<String, int> counts = {};
+    for (final r in reactions) {
       counts[r] = (counts[r] ?? 0) + 1;
     }
-    
+
     return counts.entries.map((e) => Container(
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(
+            color: Theme.of(context).dividerColor.withOpacity(0.15)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(e.key, style: TextStyle(fontSize: 12)),
+          Text(e.key, style: const TextStyle(fontSize: 12)),
           if (e.value > 1) ...[
-            SizedBox(width: 2),
-            Text(e.value.toString(), style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+            const SizedBox(width: 2),
+            Text(e.value.toString(),
+                style:
+                    const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
           ]
         ],
       ),
@@ -384,12 +517,15 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
 
   Widget _buildChatInput() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -2))
-        ]
+          BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -2))
+        ],
       ),
       child: SafeArea(
         child: Column(
@@ -397,31 +533,37 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
           children: [
             if (_selectedTag != null)
               Padding(
-                padding: EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.only(bottom: 8),
                 child: Chip(
                   label: Text(_selectedTag!),
                   onDeleted: () => setState(() => _selectedTag = null),
-                  backgroundColor: const Color(0xFF6C47FF).withOpacity(0.1),
-                  labelStyle: TextStyle(color: Color(0xFF6C47FF), fontSize: 12, fontWeight: FontWeight.bold),
+                  backgroundColor:
+                      const Color(0xFF6C47FF).withOpacity(0.1),
+                  labelStyle: const TextStyle(
+                      color: Color(0xFF6C47FF),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold),
                   deleteIconColor: const Color(0xFF6C47FF),
                 ),
               ),
             Row(
               children: [
                 IconButton(
-                  icon: Icon(Icons.emoji_emotions_outlined, color: Colors.grey),
+                  icon: const Icon(Icons.emoji_emotions_outlined,
+                      color: Colors.grey),
                   onPressed: _showEmojiPicker,
                 ),
                 Expanded(
                   child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
                       color: Theme.of(context).scaffoldBackgroundColor,
                       borderRadius: BorderRadius.circular(24),
                     ),
                     child: TextField(
                       controller: _messageController,
-                      decoration: InputDecoration(
+                      decoration: const InputDecoration(
                         hintText: 'Type anonymously...',
                         border: InputBorder.none,
                       ),
@@ -432,16 +574,18 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.local_offer_outlined, color: Colors.grey),
+                  icon: const Icon(Icons.local_offer_outlined,
+                      color: Colors.grey),
                   onPressed: _showTagSelector,
                 ),
                 Container(
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Color(0xFF6C47FF),
                     shape: BoxShape.circle,
                   ),
                   child: IconButton(
-                    icon: Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                    icon: const Icon(Icons.send_rounded,
+                        color: Colors.white, size: 20),
                     onPressed: _sendMessage,
                   ),
                 ),
@@ -455,33 +599,27 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
 
   Widget _buildExpiryWarning() {
     return Container(
-      margin: EdgeInsets.all(16),
-      padding: EdgeInsets.all(16),
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF4E5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFFFB74D).withOpacity(0.5)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+            color: const Color(0xFFFFB74D).withOpacity(0.5)),
       ),
-      child: Row(
+      child: const Row(
         children: [
-          Text('⚠️', style: TextStyle(fontSize: 24)),
-          SizedBox(width: 12),
+          Text('⚠️', style: TextStyle(fontSize: 20)),
+          SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                Text(
-                  'Rooms with less than 15 minutes left!',
-                  style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFE65100), fontSize: 14),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'This room expires soon.',
-                  style: TextStyle(color: Color(0xFFE65100), fontSize: 12),
-                ),
-              ],
+            child: Text(
+              'This room expires in less than 15 minutes!',
+              style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFE65100),
+                  fontSize: 13),
             ),
-          )
+          ),
         ],
       ),
     );
@@ -492,8 +630,8 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
       color: Colors.black.withOpacity(0.7),
       child: Center(
         child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 32),
-          padding: EdgeInsets.all(32),
+          margin: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(24),
@@ -502,47 +640,59 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: EdgeInsets.all(16),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.red.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.timer_off_rounded, color: Colors.red, size: 48),
+                child: const Icon(Icons.timer_off_rounded,
+                    color: Colors.red, size: 48),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               Text(
                 'This conversation has ended.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).textTheme.bodyLarge?.color),
               ),
-              SizedBox(height: 8),
-              Text(
+              const SizedBox(height: 8),
+              const Text(
                 'Start a new one nearby.',
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
-              SizedBox(height: 32),
+              const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (_) => const CreateRoomScreen()),
+                      MaterialPageRoute(
+                          builder: (_) => const CreateRoomScreen()),
                     );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6C47FF),
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
                   ),
-                  child: Text('Create Room', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                  child: const Text('Create Room',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16)),
                 ),
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('Go Back', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                child: const Text('Go Back',
+                    style: TextStyle(
+                        color: Colors.grey, fontWeight: FontWeight.bold)),
               )
             ],
           ),

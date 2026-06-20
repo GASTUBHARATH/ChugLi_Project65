@@ -10,12 +10,12 @@ class CommunityGuidelinesScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_rounded, color: Colors.black87),
+          icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).textTheme.bodyLarge?.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Community Guidelines',
-          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
       ),
@@ -55,7 +55,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
 
             Text(
               'Our Rules',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.black87),
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).textTheme.bodyLarge?.color),
             ),
             SizedBox(height: 16),
             Container(
@@ -67,21 +67,21 @@ class CommunityGuidelinesScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  _buildGuidelineItem('Respect Others', 'Treat everyone with kindness.', Icons.people_rounded),
+                  _buildGuidelineItem(context, 'Respect Others', 'Treat everyone with kindness.', Icons.people_rounded),
                   const Divider(height: 24),
-                  _buildGuidelineItem('No Harassment', 'Bullying or intimidating behavior will not be tolerated.', Icons.block_rounded),
+                  _buildGuidelineItem(context, 'No Harassment', 'Bullying or intimidating behavior will not be tolerated.', Icons.block_rounded),
                   const Divider(height: 24),
-                  _buildGuidelineItem('No Hate Speech', 'Any form of hate speech is strictly prohibited.', Icons.gavel_rounded),
+                  _buildGuidelineItem(context, 'No Hate Speech', 'Any form of hate speech is strictly prohibited.', Icons.gavel_rounded),
                   const Divider(height: 24),
-                  _buildGuidelineItem('No Spam', 'Do not send unsolicited promotional content.', Icons.report_gmailerrorred_rounded),
+                  _buildGuidelineItem(context, 'No Spam', 'Do not send unsolicited promotional content.', Icons.report_gmailerrorred_rounded),
                   const Divider(height: 24),
-                  _buildGuidelineItem('No Impersonation', 'Do not pretend to be someone else.', Icons.masks_rounded),
+                  _buildGuidelineItem(context, 'No Impersonation', 'Do not pretend to be someone else.', Icons.masks_rounded),
                   const Divider(height: 24),
-                  _buildGuidelineItem('Report Problems Responsibly', 'Use the reporting tools to help moderators.', Icons.flag_rounded),
+                  _buildGuidelineItem(context, 'Report Problems Responsibly', 'Use the reporting tools to help moderators.', Icons.flag_rounded),
                   const Divider(height: 24),
-                  _buildGuidelineItem('Stay Anonymous', 'Do not share personal identifying information.', Icons.visibility_off_rounded),
+                  _buildGuidelineItem(context, 'Stay Anonymous', 'Do not share personal identifying information.', Icons.visibility_off_rounded),
                   const Divider(height: 24),
-                  _buildGuidelineItem('Use ChugLi Respectfully', 'Contribute positively to the community.', Icons.favorite_rounded),
+                  _buildGuidelineItem(context, 'Use ChugLi Respectfully', 'Contribute positively to the community.', Icons.favorite_rounded),
                 ],
               ),
             ),
@@ -92,7 +92,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGuidelineItem(String title, String subtitle, IconData icon) {
+  Widget _buildGuidelineItem(BuildContext context, String title, String subtitle, IconData icon) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -109,7 +109,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
+              Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Theme.of(context).textTheme.bodyLarge?.color)),
               SizedBox(height: 4),
               Text(subtitle, style: TextStyle(color: Colors.grey.shade600, fontSize: 13, height: 1.4)),
             ],

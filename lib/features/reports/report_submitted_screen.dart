@@ -38,7 +38,7 @@ class ReportSubmittedScreen extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
                 ),
               ),
               SizedBox(height: 16),
@@ -69,11 +69,11 @@ class ReportSubmittedScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _buildInfoRow('Report is anonymous'),
+                    _buildInfoRow(context, 'Report is anonymous'),
                     SizedBox(height: 16),
-                    _buildInfoRow('We review reports 24/7'),
+                    _buildInfoRow(context, 'We review reports 24/7'),
                     SizedBox(height: 16),
-                    _buildInfoRow('You\'ll be notified of updates'),
+                    _buildInfoRow(context, 'You\'ll be notified of updates'),
                   ],
                 ),
               ),
@@ -112,7 +112,7 @@ class ReportSubmittedScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoRow(String text) {
+  Widget _buildInfoRow(BuildContext context, String text) {
     return Row(
       children: [
         Icon(Icons.check_circle_outline_rounded, color: Color(0xFF00C48C), size: 20),
@@ -122,7 +122,7 @@ class ReportSubmittedScreen extends StatelessWidget {
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w600,
-            color: Colors.black87,
+            color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
         ),
       ],

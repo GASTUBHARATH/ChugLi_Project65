@@ -89,7 +89,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
                   ],
                 ),
                 child: Column(
@@ -126,7 +126,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
                   ],
                 ),
                 child: Column(
@@ -154,7 +154,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                     padding: EdgeInsets.symmetric(vertical: 18),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     elevation: 5,
-                    shadowColor: const Color(0xFF6C47FF).withOpacity(0.5),
+                    shadowColor: const Color(0xFF6C47FF).withValues(alpha: 0.5),
                   ),
                   child: Text(
                     'Save Changes',
@@ -194,7 +194,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: Colors.white,
+        activeThumbColor: Colors.white,
         activeTrackColor: const Color(0xFF6C47FF),
         inactiveThumbColor: Colors.white,
         inactiveTrackColor: Colors.grey[300],
