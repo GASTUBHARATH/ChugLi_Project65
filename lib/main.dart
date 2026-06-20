@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'welcome_screen.dart';
+import 'package:chugli_project65/features/onboarding/welcome_screen.dart';
 
-import 'theme_provider.dart';
-import 'app_theme.dart';
+import 'package:chugli_project65/core/theme/theme_provider.dart';
+import 'package:chugli_project65/core/theme/app_theme.dart';
 
 void main() {
   runApp(const MyApp());
