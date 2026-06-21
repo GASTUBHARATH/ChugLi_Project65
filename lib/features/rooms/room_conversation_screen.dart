@@ -40,6 +40,11 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
     _roomStream = FirestoreRoomService.instance.roomStream(widget.roomId);
     _messagesStream = FirestoreRoomService.instance.messagesStream(widget.roomId);
 
+    // Automatically join the room when entering
+    FirestoreRoomService.instance.joinRoom(widget.roomId).catchError((e) {
+      debugPrint('Error joining room: $e');
+    });
+
     // Rebuild every second so the countdown timer stays accurate.
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
@@ -235,7 +240,7 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
               Column(
                 children: [
                   if (!isExpired && remaining.inMinutes < 15) _buildExpiryWarning(),
-                  Expanded(child: _buildMessageList(widget.roomId)),
+                  Expanded(child: _buildMessageList(widget.roomId, room)),
                   if (!isExpired) _buildChatInput(),
                 ],
               ),
@@ -301,7 +306,7 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
     );
   }
 
-  Widget _buildMessageList(String roomId) {
+  Widget _buildMessageList(String roomId, Map<String, dynamic> room) {
     return StreamBuilder<List<Map<String, dynamic>>>(
       stream: _messagesStream,
       builder: (context, snapshot) {
@@ -345,12 +350,14 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
             }
           });
         }
-        return _buildMessageListView(messages);
+        
+        final List<String> participantUids = List<String>.from(room['participantUids'] ?? []);
+        return _buildMessageListView(messages, participantUids);
       },
     );
   }
 
-  Widget _buildMessageListView(List<Map<String, dynamic>> messages) {
+  Widget _buildMessageListView(List<Map<String, dynamic>> messages, List<String> participantUids) {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -380,7 +387,7 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
                   children: [
                     if (!isMe) ...[
                       Text(
-                        msg['handle'] ?? 'Anonymous',
+                        participantUids.contains(msg['uid']) ? (msg['handle'] ?? 'Anonymous') : 'Deleted User',
                         style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,

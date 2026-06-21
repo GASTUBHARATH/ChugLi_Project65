@@ -42,53 +42,84 @@ class _MyRoomsScreenState extends State<MyRoomsScreen> with SingleTickerProvider
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: FirestoreRoomService.instance.myRoomsStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(color: Color(0xFF6C47FF)));
-          }
+        builder: (context, createdSnapshot) {
+          return StreamBuilder<List<Map<String, dynamic>>>(
+            stream: FirestoreRoomService.instance.joinedRoomsStream(),
+            builder: (context, joinedSnapshot) {
+              if (createdSnapshot.connectionState == ConnectionState.waiting ||
+                  joinedSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(color: Color(0xFF6C47FF)));
+              }
 
-          final rooms = snapshot.data ?? [];
-          final createdRooms = rooms;
-          final int activeCount = rooms.where((r) {
-            final exp = r['expiresAt'] as DateTime?;
-            return exp != null && exp.isAfter(DateTime.now());
-          }).length;
-
-          return NestedScrollView(
-            headerSliverBuilder: (context, innerBoxIsScrolled) {
-              return [
-                SliverToBoxAdapter(
+              if (createdSnapshot.hasError || joinedSnapshot.hasError) {
+                final error = createdSnapshot.hasError ? createdSnapshot.error : joinedSnapshot.error;
+                debugPrint('🔥 Firestore Error in MyRoomsScreen: $error');
+                return Center(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: _buildStatisticsSection(createdRooms.length, 0, activeCount, 0),
-                  ),
-                ),
-                SliverPersistentHeader(
-                  pinned: true,
-                  delegate: _SliverAppBarDelegate(
-                    TabBar(
-                      controller: _tabController,
-                      indicatorColor: const Color(0xFF6C47FF),
-                      labelColor: const Color(0xFF6C47FF),
-                      unselectedLabelColor: Colors.grey,
-                      labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      indicatorWeight: 3,
-                      tabs: const [
-                        Tab(text: 'Created'),
-                        Tab(text: 'Joined'),
-                      ],
+                    child: Text(
+                      'Error loading rooms:\n$error',
+                      style: const TextStyle(color: Colors.red),
+                      textAlign: TextAlign.center,
                     ),
                   ),
+                );
+              }
+
+              final createdRooms = createdSnapshot.data ?? [];
+              final joinedRooms = joinedSnapshot.data ?? [];
+
+              // Calculate unique active rooms and messages count
+              final uniqueRooms = <String, Map<String, dynamic>>{};
+              for (var room in createdRooms) {
+                uniqueRooms[room['id']] = room;
+              }
+              for (var room in joinedRooms) {
+                uniqueRooms[room['id']] = room;
+              }
+
+              final int activeCount = uniqueRooms.values.where((r) {
+                final exp = r['expiresAt'] as DateTime?;
+                return exp != null && exp.isAfter(DateTime.now());
+              }).length;
+
+              return NestedScrollView(
+                headerSliverBuilder: (context, innerBoxIsScrolled) {
+                  return [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: _buildStatisticsSection(createdRooms.length, joinedRooms.length, activeCount, 0),
+                      ),
+                    ),
+                    SliverPersistentHeader(
+                      pinned: true,
+                      delegate: _SliverAppBarDelegate(
+                        TabBar(
+                          controller: _tabController,
+                          indicatorColor: const Color(0xFF6C47FF),
+                          labelColor: const Color(0xFF6C47FF),
+                          unselectedLabelColor: Colors.grey,
+                          labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          indicatorWeight: 3,
+                          tabs: const [
+                            Tab(text: 'Created'),
+                            Tab(text: 'Joined'),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ];
+                },
+                body: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildRoomList(createdRooms),
+                    _buildRoomList(joinedRooms),
+                  ],
                 ),
-              ];
+              );
             },
-            body: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildRoomList(createdRooms),
-                _buildRoomList(const []), // joined rooms — future feature
-              ],
-            ),
           );
         },
       ),

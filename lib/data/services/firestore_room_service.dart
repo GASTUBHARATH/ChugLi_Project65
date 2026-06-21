@@ -96,6 +96,27 @@ class FirestoreRoomService {
             }).toList());
   }
 
+  // ── Stream rooms joined by the current user ─────────────────────
+  Stream<List<Map<String, dynamic>>> joinedRoomsStream() {
+    return _db
+        .collection('rooms')
+        .where('joinedUsers', arrayContains: _uid)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) {
+              final data = doc.data();
+              data['id'] = doc.id;
+              data['createdAt'] = _toDateTime(data['createdAt']);
+              data['expiresAt'] = _toDateTime(
+                data['expiresAt'],
+                fallback: DateTime.now().subtract(const Duration(seconds: 1)),
+              );
+              final uids = List<String>.from(data['participantUids'] ?? []);
+              data['participants'] = uids.isEmpty ? 1 : uids.length;
+              return data;
+            }).toList());
+  }
+
   // ── Stream user activity ─────────────────────────────────────────
   Stream<List<Map<String, dynamic>>> activitiesStream() {
     return _db
@@ -129,6 +150,14 @@ class FirestoreRoomService {
             }).toList());
   }
 
+  // ── Join a room ──────────────────────────────────────────────────
+  Future<void> joinRoom(String roomId) async {
+    final uid = _uid;
+    await _db.collection('rooms').doc(roomId).update({
+      'joinedUsers': FieldValue.arrayUnion([uid]),
+    });
+  }
+
   // ── Create a new room ────────────────────────────────────────────
   Future<String> createRoom({
     required String title,
@@ -148,6 +177,7 @@ class FirestoreRoomService {
       'description': description,
       'preview': 'Room created! Start the conversation...',
       'participantUids': [uid],
+      'joinedUsers': [uid],
       'maxParticipants': maxParticipants,
       'visibility': visibility,
       'createdAt': Timestamp.fromDate(now),
@@ -275,5 +305,54 @@ class FirestoreRoomService {
       'preview': preview,
       'timestamp': Timestamp.now(),
     });
+  }
+
+  // ── Delete Account Data ──────────────────────────────────────────
+  Future<void> deleteAccountData() async {
+    final uid = _uid;
+    final batch = _db.batch();
+
+    // 1. Delete all user activity subcollection docs
+    final activitySnap = await _db
+        .collection('users')
+        .doc(uid)
+        .collection('activity')
+        .get();
+    for (final doc in activitySnap.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // 2. Delete the user document itself
+    batch.delete(_db.collection('users').doc(uid));
+
+    // 3. Remove uid from joinedUsers & participantUids across rooms
+    // Perform two queries and merge unique room document references.
+    final participantRoomsSnap = await _db
+        .collection('rooms')
+        .where('participantUids', arrayContains: uid)
+        .get();
+    
+    final joinedRoomsSnap = await _db
+        .collection('rooms')
+        .where('joinedUsers', arrayContains: uid)
+        .get();
+
+    final Set<String> roomIdsToUpdate = {};
+    for (final doc in participantRoomsSnap.docs) {
+      roomIdsToUpdate.add(doc.id);
+    }
+    for (final doc in joinedRoomsSnap.docs) {
+      roomIdsToUpdate.add(doc.id);
+    }
+
+    for (final roomId in roomIdsToUpdate) {
+      batch.update(_db.collection('rooms').doc(roomId), {
+        'participantUids': FieldValue.arrayRemove([uid]),
+        'joinedUsers': FieldValue.arrayRemove([uid]),
+      });
+    }
+
+    // Commit all deletions and updates
+    await batch.commit();
   }
 }

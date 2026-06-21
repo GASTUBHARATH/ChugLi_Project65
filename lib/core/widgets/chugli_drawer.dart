@@ -12,6 +12,7 @@ import 'package:chugli_project65/features/info/how_chugli_works_screen.dart';
 import 'package:chugli_project65/features/info/privacy_safety_screen.dart';
 import 'package:chugli_project65/features/settings/settings_screen.dart';
 import 'package:chugli_project65/features/profile/change_radius_screen.dart';
+import 'package:chugli_project65/data/services/firestore_room_service.dart';
 import 'package:chugli_project65/features/activity/recent_activity_screen.dart';
 
 class ChugliDrawer extends StatefulWidget {
@@ -335,19 +336,7 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
     }
 
     try {
-      final uid = user.uid;
-      final db = FirebaseFirestore.instance;
-
-      final activitySnap = await db
-          .collection('users')
-          .doc(uid)
-          .collection('activity')
-          .get();
-      for (final doc in activitySnap.docs) {
-        await doc.reference.delete();
-      }
-
-      await db.collection('users').doc(uid).delete();
+      await FirestoreRoomService.instance.deleteAccountData();
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
@@ -361,6 +350,29 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
           MaterialPageRoute(builder: (_) => const WelcomeScreen()),
           (route) => false,
         );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) Navigator.pop(context); // Dismiss loading
+      if (e.code == 'requires-recent-login') {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please log out and log back in before deleting.'),
+              backgroundColor: Colors.orange,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.message}'),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) Navigator.pop(context);

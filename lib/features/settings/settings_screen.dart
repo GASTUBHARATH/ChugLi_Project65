@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:chugli_project65/features/profile/change_handle_screen.dart';
 import 'package:chugli_project65/features/profile/interests_screen.dart';
 import 'package:chugli_project65/features/notifications/notifications_screen.dart';
@@ -11,6 +10,7 @@ import 'package:chugli_project65/features/info/help_support_screen.dart';
 import 'package:chugli_project65/features/info/about_chugli_screen.dart';
 import 'package:chugli_project65/features/onboarding/welcome_screen.dart';
 import 'package:chugli_project65/core/theme/theme_provider.dart';
+import 'package:chugli_project65/data/services/firestore_room_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -108,27 +108,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
 
     try {
-      final uid = user.uid;
-      final db = FirebaseFirestore.instance;
+      // 1. Delete Firestore Data via Service
+      await FirestoreRoomService.instance.deleteAccountData();
 
-      // 1. Delete all user activity subcollection docs
-      final activitySnap = await db
-          .collection('users')
-          .doc(uid)
-          .collection('activity')
-          .get();
-      for (final doc in activitySnap.docs) {
-        await doc.reference.delete();
-      }
-
-      // 2. Delete the user document itself
-      await db.collection('users').doc(uid).delete();
-
-      // 3. Clear local SharedPreferences
+      // 2. Clear local SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.clear();
 
-      // 4. Delete Firebase Auth account
+      // 3. Delete Firebase Auth account
       await user.delete();
 
       if (mounted) {
