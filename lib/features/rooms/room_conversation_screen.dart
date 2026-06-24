@@ -15,6 +15,7 @@ class RoomConversationScreen extends StatefulWidget {
 }
 
 class _RoomConversationScreenState extends State<RoomConversationScreen> {
+  static const _secureChannel = MethodChannel('com.chugli.app/secure');
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   Timer? _timer;
@@ -40,6 +41,8 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
   @override
   void initState() {
     super.initState();
+    _secureChannel.invokeMethod('enableSecureMode');
+
     _roomStream = FirestoreRoomService.instance.roomStream(widget.roomId);
     _messagesStream = FirestoreRoomService.instance.messagesStream(widget.roomId);
 
@@ -63,6 +66,7 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
 
   @override
   void dispose() {
+    _secureChannel.invokeMethod('disableSecureMode');
     _timer?.cancel();
     _messageController.dispose();
     _scrollController.dispose();
@@ -365,13 +369,7 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ── Screenshot Protection ────────────────────────────────────────
-    // Uses Android FLAG_SECURE / iOS equivalent via AnnotatedRegion
-    // to prevent screenshots and screen recording inside chat rooms.
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark,
-      child: _buildSecureScreen(),
-    );
+    return _buildSecureScreen();
   }
 
   Widget _buildSecureScreen() {
@@ -417,8 +415,6 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
             children: [
               Column(
                 children: [
-                  // Privacy notice banner at top of chat
-                  _buildPrivacyBanner(),
                   if (!isExpired && remaining.inMinutes < 15) _buildExpiryWarning(),
                   // Banned notice replaces message list and input
                   if (_banChecked && _isBanned)
@@ -437,25 +433,6 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
     );
   }
 
-  Widget _buildPrivacyBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: const Color(0xFF1A1A2E).withOpacity(0.95),
-      child: Row(
-        children: [
-          const Icon(Icons.shield_rounded, color: Color(0xFF6C47FF), size: 16),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              '🔒 Screenshots are restricted in this room to protect everyone\'s privacy.',
-              style: TextStyle(color: Colors.white70, fontSize: 11),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   Widget _buildBannedNotice() {
     return Expanded(

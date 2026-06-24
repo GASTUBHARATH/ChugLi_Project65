@@ -41,6 +41,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     await LocationService.instance.getCurrentLocation();
     // Trigger a rebuild so the radius filter applies once GPS is ready.
     if (mounted) setState(() {});
+    
+    FirestoreRoomService.instance.syncUserLocationAndNotifications();
   }
 
   Future<void> _loadRadius() async {
@@ -60,6 +62,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
         _selectedRadius = radius;
       });
     }
+    FirestoreRoomService.instance.syncUserLocationAndNotifications();
   }
 
   @override
@@ -74,6 +77,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
       setState(() {}); // trigger rebuild to apply new GPS position to filter
       HapticFeedback.lightImpact();
     }
+    
+    FirestoreRoomService.instance.syncUserLocationAndNotifications();
   }
 
   void _showRoomOptions(BuildContext context) {

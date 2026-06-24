@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chugli_project65/features/profile/about_radius_screen.dart';
 import 'package:chugli_project65/data/services/room_data_service.dart';
 import 'package:chugli_project65/data/services/activity_data_service.dart';
+import 'package:chugli_project65/data/services/firestore_room_service.dart';
 
 class ChangeRadiusScreen extends StatefulWidget {
   const ChangeRadiusScreen({super.key});
@@ -76,6 +77,8 @@ class _ChangeRadiusScreenState extends State<ChangeRadiusScreen> with SingleTick
       action: 'Radius Updated',
       preview: 'New radius: $_selectedRadius',
     );
+    
+    FirestoreRoomService.instance.syncUserLocationAndNotifications();
     
     if (mounted) {
       Navigator.pop(context, true);

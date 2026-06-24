@@ -1,5 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:dart_geohash/dart_geohash.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chugli_project65/data/services/fcm_service.dart';
+import 'package:chugli_project65/data/services/location_service.dart';
 
 // Safely converts a Firestore value to DateTime.
 // Returns [fallback] if the value is null or not a Timestamp.
@@ -280,6 +284,58 @@ class FirestoreRoomService {
     }, SetOptions(merge: true));
   }
 
+  // ── Sync user location, radius, and FCM token for notifications ──
+  Future<void> syncUserLocationData({
+    required double latitude,
+    required double longitude,
+    required double radiusPreference,
+    required String geohash,
+    String? fcmToken,
+  }) async {
+    final Map<String, dynamic> data = {
+      'lastLocation': GeoPoint(latitude, longitude),
+      'geohash': geohash,
+      'radiusPreference': radiusPreference,
+      'updatedAt': Timestamp.now(),
+    };
+
+    if (fcmToken != null) {
+      data['fcmTokens'] = FieldValue.arrayUnion([fcmToken]);
+    }
+
+    await _db.collection('users').doc(_uid).set(data, SetOptions(merge: true));
+  }
+
+  Future<void> syncUserLocationAndNotifications() async {
+    try {
+      final locationService = LocationService.instance;
+      final lat = locationService.latitude;
+      final lon = locationService.longitude;
+
+      if (lat == null || lon == null) return;
+
+      final prefs = await SharedPreferences.getInstance();
+      String radiusStr = prefs.getString('selected_radius') ?? '0.5 km';
+      double radiusPreference = double.tryParse(radiusStr.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.5;
+
+      final hasher = GeoHasher();
+      final geohash = hasher.encode(lon, lat);
+
+      final fcmToken = await FCMService.instance.getToken();
+
+      await syncUserLocationData(
+        latitude: lat,
+        longitude: lon,
+        radiusPreference: radiusPreference,
+        geohash: geohash,
+        fcmToken: fcmToken,
+      );
+    } catch (e) {
+      // Ignore background sync errors
+    }
+  }
+
+
   // ── Get user handle from Firestore ───────────────────────────────
   Future<String?> getUserHandle() async {
     final doc = await _db.collection('users').doc(_uid).get();
@@ -322,10 +378,20 @@ class FirestoreRoomService {
       batch.delete(doc.reference);
     }
 
-    // 2. Delete the user document itself
+    // 2. Delete all user reports subcollection docs
+    final reportsSnap = await _db
+        .collection('users')
+        .doc(uid)
+        .collection('reports')
+        .get();
+    for (final doc in reportsSnap.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // 3. Delete the user document itself
     batch.delete(_db.collection('users').doc(uid));
 
-    // 3. Remove uid from joinedUsers & participantUids across rooms
+    // 4. Remove uid from joinedUsers & participantUids across rooms
     // Perform two queries and merge unique room document references.
     final participantRoomsSnap = await _db
         .collection('rooms')
