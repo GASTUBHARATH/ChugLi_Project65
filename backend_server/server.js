@@ -39,9 +39,9 @@ function haversineKm(lat1, lon1, lat2, lon2) {
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -59,7 +59,7 @@ db.collection("rooms")
       if (change.type === "added") {
         const room = change.doc.data();
         const roomId = change.doc.id;
-        
+
         await processNewRoom(roomId, room);
       }
     });
@@ -194,5 +194,15 @@ async function processNewRoom(roomId, room) {
   }
 }
 
-// Keep the Node.js process alive
-setInterval(() => {}, 1000);
+// Keep the Node.js process alive and satisfy Render's port binding requirement
+const http = require("http");
+const PORT = process.env.PORT || 8080;
+
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { "Content-Type": "text/plain" });
+  res.end("Notification server is running OK.\n");
+});
+
+server.listen(PORT, () => {
+  console.log(`🚀 Dummy HTTP server listening on port ${PORT}`);
+});
