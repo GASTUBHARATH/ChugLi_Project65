@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:chugli_project65/core/utils/handle_generator.dart';
 import 'package:chugli_project65/features/profile/change_handle_screen.dart';
 import 'package:chugli_project65/features/profile/interests_screen.dart';
 import 'package:chugli_project65/features/notifications/notifications_screen.dart';
@@ -20,6 +21,114 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  String _currentHandle = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentHandle();
+  }
+
+  Future<void> _loadCurrentHandle() async {
+    try {
+      final firestoreHandle =
+          await FirestoreRoomService.instance.getUserHandle();
+      if (firestoreHandle != null && firestoreHandle.isNotEmpty) {
+        if (mounted) setState(() => _currentHandle = firestoreHandle);
+        return;
+      }
+    } catch (_) {}
+    final prefs = await SharedPreferences.getInstance();
+    final local = prefs.getString('userHandle');
+    if (mounted) {
+      setState(() =>
+          _currentHandle = (local != null && local.isNotEmpty) ? local : 'Anonymous');
+    }
+  }
+
+  Future<void> _generateNewHandle() async {
+    final newHandles = HandleGenerator.generateHandles(1);
+    if (newHandles.isEmpty) return;
+    final handle = HandleGenerator.textOnly(newHandles.first);
+
+    // Show the new handle with a confirmation snackbar
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('New Handle Generated',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF6C47FF).withOpacity(0.08),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                handle,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF6C47FF),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Use this as your new anonymous handle?',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel',
+                style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6C47FF),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Use This Handle',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('userHandle', handle);
+    try {
+      await FirestoreRoomService.instance.saveUserProfile(handle: handle);
+    } catch (e) {
+      debugPrint('Error saving handle: $e');
+    }
+    if (mounted) {
+      setState(() => _currentHandle = handle);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(children: [
+            const Icon(Icons.check_circle_rounded, color: Colors.white),
+            const SizedBox(width: 8),
+            Text('Handle set to "$handle"'),
+          ]),
+          backgroundColor: const Color(0xFF6C47FF),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    }
+  }
   void _logout() {
     showDialog(
       context: context,
@@ -205,18 +314,73 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildSectionTitle("Account"),
+              _buildSectionTitle('Account'),
+              // Current Handle badge
+              Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF6C47FF).withOpacity(0.08),
+                      const Color(0xFF7A5CFF).withOpacity(0.04),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                      color: const Color(0xFF6C47FF).withOpacity(0.15)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6C47FF).withOpacity(0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.person_rounded,
+                          color: Color(0xFF6C47FF), size: 18),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Your Anonymous Handle',
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w500)),
+                        Text(
+                          _currentHandle,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF6C47FF),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
               _buildSettingsCard(context, children: [
-                  _buildActionTile("Change Handle", Icons.person_outline, onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ChangeHandleScreen()));
+                  _buildActionTile('Change Handle', Icons.edit_rounded, onTap: () {
+                    Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const ChangeHandleScreen()),
+                    ).then((_) => _loadCurrentHandle());
                   }),
                   _buildDivider(),
-                  _buildActionTile("Interests", Icons.favorite_border_rounded, onTap: () {
+                  _buildActionTile('Generate New Handle', Icons.auto_awesome_rounded,
+                      onTap: _generateNewHandle),
+                  _buildDivider(),
+                  _buildActionTile('Interests', Icons.favorite_border_rounded, onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const InterestsScreen()));
                   }),
                 ],
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               
               _buildSectionTitle("Preferences"),
               _buildSettingsCard(context, children: [

@@ -1,124 +1,126 @@
 import 'package:flutter/material.dart';
-import 'package:chugli_project65/data/services/report_data_service.dart';
-import 'package:chugli_project65/features/reports/new_report_issue_screen.dart';
+import 'package:chugli_project65/data/services/firestore_room_service.dart';
 
-class ReportsHistoryScreen extends StatefulWidget {
+/// View-only reports history screen.
+/// Shows all reports the current user has submitted, pulled from Firestore.
+/// Reports can ONLY be created from inside a chat room by long-pressing a message.
+class ReportsHistoryScreen extends StatelessWidget {
   const ReportsHistoryScreen({super.key});
-
-  @override
-  State<ReportsHistoryScreen> createState() => _ReportsHistoryScreenState();
-}
-
-class _ReportsHistoryScreenState extends State<ReportsHistoryScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
+        backgroundColor: Theme.of(context).cardColor,
+        elevation: 1,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).textTheme.bodyLarge?.color),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'Reports',
-          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 20),
+          'My Reports',
+          style: TextStyle(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+              fontWeight: FontWeight.bold,
+              fontSize: 20),
         ),
         centerTitle: true,
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: const Color(0xFF6C47FF),
-          unselectedLabelColor: Colors.grey,
-          indicatorColor: const Color(0xFF6C47FF),
-          indicatorWeight: 3,
-          labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-          unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          tabs: const [
-            Tab(text: 'All'),
-            Tab(text: 'Pending'),
-            Tab(text: 'Resolved'),
-            Tab(text: 'Rejected'),
-          ],
-        ),
       ),
-      body: ValueListenableBuilder<List<Map<String, dynamic>>>(
-        valueListenable: ReportDataService.instance.reportsNotifier,
-        builder: (context, reports, child) {
-          final pending = reports.where((r) => r['status'] == 'Pending').toList();
-          final resolved = reports.where((r) => r['status'] == 'Resolved').toList();
-          final rejected = reports.where((r) => r['status'] == 'Rejected').toList();
-
-          return TabBarView(
-            controller: _tabController,
-            children: [
-              _buildReportList(reports),
-              _buildReportList(pending),
-              _buildReportList(resolved),
-              _buildReportList(rejected),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NewReportIssueScreen()),
-          );
-        },
-        backgroundColor: const Color(0xFF6C47FF),
-        icon: Icon(Icons.add_rounded, color: Colors.white),
-        label: Text('New Report', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-    );
-  }
-
-  Widget _buildReportList(List<Map<String, dynamic>> reports) {
-    if (reports.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.inbox_rounded, size: 64, color: Colors.grey.shade400),
-            SizedBox(height: 16),
-            Text(
-              'No reports found',
-              style: TextStyle(fontSize: 16, color: Colors.grey.shade600, fontWeight: FontWeight.w600),
+      body: Column(
+        children: [
+          // Informational banner
+          Container(
+            margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF6C47FF).withOpacity(0.08),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF6C47FF).withOpacity(0.2)),
             ),
-          ],
-        ),
-      );
-    }
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline_rounded, color: Color(0xFF6C47FF), size: 20),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'To report someone, long-press any message in a chat room and tap "Report User".',
+                    style: TextStyle(
+                        color: Color(0xFF6C47FF), fontSize: 13, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Live Firestore stream of submitted reports
+          Expanded(
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: FirestoreRoomService.instance.myReportsStream(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Could not load reports.\n${snapshot.error}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.grey),
+                    ),
+                  );
+                }
 
-    return ListView.builder(
-      padding: EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 80),
-      itemCount: reports.length,
-      itemBuilder: (context, index) {
-        final report = reports[index];
-        return _buildReportCard(report);
-      },
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: Color(0xFF6C47FF)),
+                  );
+                }
+
+                final reports = snapshot.data ?? [];
+
+                if (reports.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.shield_outlined, size: 72, color: Colors.grey.shade300),
+                        const SizedBox(height: 20),
+                        Text(
+                          'No reports yet',
+                          style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade500),
+                        ),
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 40),
+                          child: Text(
+                            'Reports you submit in chat rooms will appear here.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  itemCount: reports.length,
+                  itemBuilder: (context, index) =>
+                      _buildReportCard(context, reports[index]),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      // NO FloatingActionButton — reports can only be created from chat
     );
   }
 
-  Widget _buildReportCard(Map<String, dynamic> report) {
+  Widget _buildReportCard(BuildContext context, Map<String, dynamic> report) {
     Color statusColor;
-    String statusText = report['status'];
+    String statusText = report['status'] ?? 'Pending';
     IconData statusIcon;
 
     switch (statusText) {
@@ -129,128 +131,173 @@ class _ReportsHistoryScreenState extends State<ReportsHistoryScreen> with Single
       case 'Rejected':
         statusColor = const Color(0xFFFF6B6B);
         statusIcon = Icons.cancel_rounded;
+        statusText = 'Rejected';
         break;
       case 'Pending':
       default:
         statusColor = const Color(0xFFFFC83D);
-        statusText = 'Under Review';
         statusIcon = Icons.pending_rounded;
+        statusText = 'Under Review';
         break;
     }
 
-    DateTime submittedAt = report['submittedAt'];
-    String formattedDate = '${submittedAt.day}/${submittedAt.month}/${submittedAt.year}';
+    final DateTime submittedAt = report['submittedAt'] is DateTime
+        ? report['submittedAt'] as DateTime
+        : DateTime.now();
+    final String formattedDate =
+        '${submittedAt.day}/${submittedAt.month}/${submittedAt.year}';
 
     return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      padding: EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
-            blurRadius: 10,
+            blurRadius: 12,
             offset: const Offset(0, 4),
           )
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: statusColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(statusIcon, size: 14, color: statusColor),
-                    SizedBox(width: 4),
-                    Text(
-                      statusText,
-                      style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: Icon(Icons.more_horiz_rounded, color: Colors.grey),
-                onPressed: () {},
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
-              ),
-            ],
-          ),
-          SizedBox(height: 16),
-          Text(
-            report['issueType'],
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color),
-          ),
-          SizedBox(height: 8),
-          if (report['roomId'] != null) ...[
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Status badge + date row
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(Icons.meeting_room_rounded, size: 16, color: Colors.grey),
-                SizedBox(width: 6),
-                Text(
-                  'Room ID: ${report['roomId']}', // Using ID since dummy data might lack names
-                  style: TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.w500),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(statusIcon, size: 14, color: statusColor),
+                      const SizedBox(width: 4),
+                      Text(
+                        statusText,
+                        style: TextStyle(
+                            color: statusColor, fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                Row(
+                  children: [
+                    Icon(Icons.calendar_today_rounded, size: 13, color: Colors.grey.shade400),
+                    const SizedBox(width: 4),
+                    Text(formattedDate,
+                        style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                  ],
                 ),
               ],
             ),
-            SizedBox(height: 8),
-          ],
-          Row(
-            children: [
-              Icon(Icons.calendar_today_rounded, size: 16, color: Colors.grey),
-              SizedBox(width: 6),
-              Text(
-                'Submitted on $formattedDate',
-                style: TextStyle(fontSize: 13, color: Colors.grey, fontWeight: FontWeight.w500),
-              ),
-            ],
-          ),
-          if (report['rejectionReason'] != null) ...[
-            SizedBox(height: 16),
+            const SizedBox(height: 14),
+            // Reported user
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.person_outline_rounded,
+                      color: Colors.redAccent, size: 16),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Reported: ${report['reportedHandle'] ?? 'Unknown'}',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // Reason
             Container(
-              padding: EdgeInsets.all(12),
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.05),
+                color: Theme.of(context).scaffoldBackgroundColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.red.withOpacity(0.1)),
               ),
-              child: Row(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline_rounded, color: Colors.red, size: 18),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Rejection Reason',
-                          style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          report['rejectionReason'],
-                          style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontSize: 13),
-                        ),
-                      ],
-                    ),
+                  Text('Reason',
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade500)),
+                  const SizedBox(height: 4),
+                  Text(
+                    report['reason'] ?? '—',
+                    style: const TextStyle(fontSize: 14),
                   ),
                 ],
               ),
             ),
+            // Message snippet (if available)
+            if ((report['messageText'] as String?)?.isNotEmpty == true) ...[
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.withOpacity(0.12)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Reported message',
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade500)),
+                    const SizedBox(height: 4),
+                    Text(
+                      '"${report['messageText']}"',
+                      style: const TextStyle(
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.grey),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            // Room info
+            if ((report['roomId'] as String?)?.isNotEmpty == true) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Icon(Icons.meeting_room_rounded,
+                      size: 14, color: Colors.grey.shade400),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'Room: ${report['roomId']}',
+                      style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

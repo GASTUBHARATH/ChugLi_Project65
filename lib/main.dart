@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
-import 'package:chugli_project65/features/onboarding/welcome_screen.dart';
+import 'package:chugli_project65/features/onboarding/splash_screen.dart';
 import 'package:chugli_project65/core/theme/theme_provider.dart';
 import 'package:chugli_project65/core/theme/app_theme.dart';
 
@@ -43,7 +43,7 @@ class MyApp extends StatelessWidget {
           themeMode: globalThemeProvider.themeMode,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
-          home: const WelcomeScreen(),
+          home: const SplashScreen(),
         );
       },
     );

@@ -4,30 +4,38 @@ service cloud.firestore {
 
     // ── Rooms ──────────────────────────────────────────────────────
     match /rooms/{roomId} {
-      // Any authenticated user can read rooms
       allow read: if request.auth != null;
-
-      // Only authenticated users can create rooms, and must set createdBy to themselves
       allow create: if request.auth != null
                     && request.resource.data.createdBy == request.auth.uid;
-
-      // Any authenticated user can update a room (for preview, participantUids, reactions, isHighActivity)
       allow update: if request.auth != null;
-
-      // Only the creator can delete
       allow delete: if request.auth != null
                     && resource.data.createdBy == request.auth.uid;
 
       // Messages sub-collection
       match /messages/{messageId} {
         allow read: if request.auth != null;
-        // Any authenticated user can send messages; uid must match their own
         allow create: if request.auth != null
                       && request.resource.data.uid == request.auth.uid;
-        // Allow updates (for reactions via arrayUnion)
         allow update: if request.auth != null;
-        // Messages cannot be deleted
         allow delete: if false;
+      }
+
+      // Reports sub-collection — authenticated users can submit and read reports
+      match /reports/{reportId} {
+        allow read: if request.auth != null;
+        // Only allow creating a report for someone else
+        allow create: if request.auth != null
+                      && request.resource.data.reporterUid == request.auth.uid
+                      && request.resource.data.reportedUid != request.auth.uid;
+        allow update, delete: if false;
+      }
+
+      // BannedUsers sub-collection — only readable by authenticated users
+      // Written only by the Cloud Function / service-level logic (from client)
+      match /bannedUsers/{uid} {
+        allow read: if request.auth != null;
+        // Allow write so the client can create ban documents after threshold check
+        allow write: if request.auth != null;
       }
     }
 
@@ -38,6 +46,13 @@ service cloud.firestore {
       // Activity sub-collection
       match /activity/{activityId} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
+      }
+
+      // Personal reports history — only the reporter can read their own
+      match /reports/{reportId} {
+        allow read: if request.auth != null && request.auth.uid == uid;
+        allow create: if request.auth != null && request.auth.uid == uid;
+        allow update, delete: if false;
       }
     }
   }

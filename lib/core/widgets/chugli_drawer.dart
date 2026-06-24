@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:chugli_project65/features/onboarding/welcome_screen.dart';
 import 'package:chugli_project65/features/profile/change_handle_screen.dart';
 import 'package:chugli_project65/features/profile/interests_screen.dart';
@@ -125,9 +124,9 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
                   SizedBox(height: 5),
                   _buildDrawerItem(
                     index: 5,
-                    icon: "🚩",
-                    title: "Report a Problem",
-                    subtitle: "Report content or issues",
+                    icon: '🚩',
+                    title: 'My Reports',
+                    subtitle: 'View your report history',
                   ),
                   SizedBox(height: 5),
                   _buildDrawerItem(

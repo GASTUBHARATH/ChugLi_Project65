@@ -355,4 +355,132 @@ class FirestoreRoomService {
     // Commit all deletions and updates
     await batch.commit();
   }
+
+  // ── Report a user from a chat message ────────────────────────────
+  // Submits a report to rooms/{roomId}/reports and users/{myUid}/reports.
+  // Then checks if the reported user should be auto-banned.
+  Future<void> reportUser({
+    required String roomId,
+    required String reportedUid,
+    required String reportedHandle,
+    required String messageText,
+    required String reason,
+  }) async {
+    final myUid = _uid;
+    final now = Timestamp.now();
+
+    // Avoid duplicate reports from the same user for the same person in this room.
+    final existing = await _db
+        .collection('rooms')
+        .doc(roomId)
+        .collection('reports')
+        .where('reporterUid', isEqualTo: myUid)
+        .where('reportedUid', isEqualTo: reportedUid)
+        .limit(1)
+        .get();
+    if (existing.docs.isNotEmpty) return; // already reported this person
+
+    final batch = _db.batch();
+
+    // Write to room's reports subcollection
+    final roomReportRef =
+        _db.collection('rooms').doc(roomId).collection('reports').doc();
+    batch.set(roomReportRef, {
+      'reportedUid': reportedUid,
+      'reportedHandle': reportedHandle,
+      'reporterUid': myUid,
+      'messageText': messageText,
+      'reason': reason,
+      'status': 'Pending',
+      'timestamp': now,
+    });
+
+    // Mirror to the reporter's personal reports history
+    final userReportRef =
+        _db.collection('users').doc(myUid).collection('reports').doc();
+    batch.set(userReportRef, {
+      'reportedUid': reportedUid,
+      'reportedHandle': reportedHandle,
+      'roomId': roomId,
+      'messageText': messageText,
+      'reason': reason,
+      'status': 'Pending',
+      'submittedAt': now,
+    });
+
+    await batch.commit();
+
+    // Check if the reported user should be auto-banned from this room.
+    await _checkAndBanIfNeeded(roomId: roomId, reportedUid: reportedUid);
+  }
+
+  // ── Internal: auto-ban if reported by >50% of participants ───────
+  Future<void> _checkAndBanIfNeeded({
+    required String roomId,
+    required String reportedUid,
+  }) async {
+    final roomDoc = await _db.collection('rooms').doc(roomId).get();
+    if (!roomDoc.exists) return;
+
+    final participantUids =
+        List<String>.from(roomDoc.data()?['participantUids'] ?? []);
+    final totalParticipants = participantUids.length;
+    if (totalParticipants < 2) return; // Need at least 2 people
+
+    // Count how many UNIQUE reporters have reported this specific user.
+    final reportsSnap = await _db
+        .collection('rooms')
+        .doc(roomId)
+        .collection('reports')
+        .where('reportedUid', isEqualTo: reportedUid)
+        .get();
+
+    // Count unique reporters (deduplicate just in case)
+    final uniqueReporters =
+        reportsSnap.docs.map((d) => d.data()['reporterUid'] as String).toSet();
+    final reportCount = uniqueReporters.length;
+
+    // >50% threshold
+    if (reportCount / totalParticipants > 0.5) {
+      await _db
+          .collection('rooms')
+          .doc(roomId)
+          .collection('bannedUsers')
+          .doc(reportedUid)
+          .set({
+        'bannedAt': Timestamp.now(),
+        'reason': 'Reported by majority of participants',
+        'reportCount': reportCount,
+      });
+    }
+  }
+
+  // ── Check if the current user is banned from a room ──────────────
+  Future<bool> isUserBanned(String roomId) async {
+    final uid = _uid;
+    final doc = await _db
+        .collection('rooms')
+        .doc(roomId)
+        .collection('bannedUsers')
+        .doc(uid)
+        .get();
+    return doc.exists;
+  }
+
+  // ── Stream of current user's report history ───────────────────────
+  Stream<List<Map<String, dynamic>>> myReportsStream() {
+    return _db
+        .collection('users')
+        .doc(_uid)
+        .collection('reports')
+        .orderBy('submittedAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((doc) {
+              final data = doc.data();
+              data['id'] = doc.id;
+              data['submittedAt'] = _toDateTime(data['submittedAt']);
+              return data;
+            }).toList());
+  }
 }
+

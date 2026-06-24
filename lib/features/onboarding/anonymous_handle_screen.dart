@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chugli_project65/core/utils/handle_generator.dart';
 import 'package:chugli_project65/data/services/firestore_room_service.dart';
 import 'package:chugli_project65/features/onboarding/interest_quick_pick_screen.dart';
 
@@ -16,24 +17,23 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
   final TextEditingController _handleController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   String? _selectedHandle;
+  bool _showCustomInput = false;
+  bool _isLoading = false;
 
-  final List<String> _suggestions = [
-    "SleepyMango42 🥭",
-    "CosmicDosa99 🌯",
-    "ChaoticPigeon07 🐦",
-    "BoldIdli88 🍚",
-    "MidnightSamosa55 🥟",
-    "ZenCactus13 🌵",
-    "GlitchyOtter31 🦦",
-    "NachtfalterXL 🦋",
-  ];
+  // Dynamically generated suggestions
+  List<String> _suggestions = [];
 
   late AnimationController _buttonController;
   late Animation<double> _buttonScale;
 
+  // Offensive word filter — basic list, extend as needed
+  static const _blockedWords = ['hate', 'kill', 'sex', 'porn', 'fuck', 'shit', 'ass'];
+
   @override
   void initState() {
     super.initState();
+    _refreshSuggestions();
+
     _buttonController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 100),
@@ -50,12 +50,30 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
     super.dispose();
   }
 
+  void _refreshSuggestions() {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _suggestions = HandleGenerator.generateHandles(6);
+      _selectedHandle = null;
+      _handleController.clear();
+    });
+  }
+
+  void _selectSuggestion(String suggestion) {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _selectedHandle = suggestion;
+      _showCustomInput = false;
+      _handleController.text = HandleGenerator.textOnly(suggestion);
+    });
+  }
+
   void _onHandleSubmit() async {
     final handle = _handleController.text.trim();
     if (handle.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Please choose a handle"),
+          content: Text('Please select or create a handle'),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ),
@@ -65,24 +83,38 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
 
     if (_formKey.currentState!.validate()) {
       HapticFeedback.mediumImpact();
+      setState(() => _isLoading = true);
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('userHandle', handle);
 
-      // Save handle to Firestore
       try {
         await FirestoreRoomService.instance.saveUserProfile(handle: handle);
       } catch (e) {
-        debugPrint("Error saving handle to Firestore: $e");
+        debugPrint('Error saving handle to Firestore: $e');
       }
 
       if (!mounted) return;
+      setState(() => _isLoading = false);
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => const InterestQuickPickScreen(),
-        ),
+        MaterialPageRoute(builder: (_) => const InterestQuickPickScreen()),
       );
     }
+  }
+
+  String? _validateHandle(String? value) {
+    if (value == null || value.isEmpty) return 'Handle is required';
+    if (value.length < 3) return 'Minimum 3 characters';
+    if (value.length > 20) return 'Maximum 20 characters';
+    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
+      return 'Letters, numbers and underscores only';
+    }
+    final lower = value.toLowerCase();
+    for (final word in _blockedWords) {
+      if (lower.contains(word)) return 'Please choose a more appropriate handle';
+    }
+    return null;
   }
 
   @override
@@ -90,91 +122,96 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                SizedBox(height: 10),
-                // Top Section: Back Arrow & Progress
+                const SizedBox(height: 10),
+
+                // Progress row
                 Row(
                   children: [
                     IconButton(
-                      icon: Icon(Icons.arrow_back_ios, color: Color(0xFF6C47FF), size: 20),
+                      icon: const Icon(Icons.arrow_back_ios,
+                          color: Color(0xFF6C47FF), size: 20),
                       onPressed: () => Navigator.pop(context),
                     ),
                     Expanded(child: _buildProgressIndicator()),
-                    SizedBox(width: 40), // Balance the back arrow
+                    const SizedBox(width: 40),
                   ],
                 ),
-                SizedBox(height: 30),
+                const SizedBox(height: 30),
 
-                // Title Section
-                Text(
-                  "Choose your\nanonymous handle 😎",
+                // Title
+                const Text(
+                  'Choose your\nanonymous handle 😎',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    fontSize: 40,
+                    fontSize: 36,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1A1A1A),
-                    height: 1.1,
+                    height: 1.15,
                   ),
                 ),
-                SizedBox(height: 16),
-                Text(
-                  "This is how people nearby will know you.\nYour real identity stays private.",
+                const SizedBox(height: 14),
+                const Text(
+                  'This is how people nearby will know you.\nYour real identity stays private.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey,
-                    height: 1.4,
-                  ),
+                  style: TextStyle(fontSize: 15, color: Colors.grey, height: 1.5),
                 ),
-                SizedBox(height: 40),
+                const SizedBox(height: 36),
 
-                // Handle Input
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: EdgeInsets.only(left: 8.0, bottom: 8.0),
-                    child: Text(
-                      "Enter your anonymous handle",
+                // ── Suggestions Section ─────────────────────────────────
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Pick one for yourself',
                       style: TextStyle(
-                        color: Colors.grey[700],
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                _buildHandleInput(),
-                SizedBox(height: 30),
-
-                // Suggestions Section
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: EdgeInsets.only(left: 8.0, bottom: 12.0),
-                    child: Text(
-                      "Suggestions for you",
-                      style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 17,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1A1A1A),
                       ),
                     ),
-                  ),
+                    // Generate More button
+                    TextButton.icon(
+                      onPressed: _refreshSuggestions,
+                      icon: const Icon(Icons.refresh_rounded,
+                          size: 17, color: Color(0xFF6C47FF)),
+                      label: const Text(
+                        'Generate More',
+                        style: TextStyle(
+                          color: Color(0xFF6C47FF),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        backgroundColor: const Color(0xFF6C47FF).withOpacity(0.08),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 14),
                 _buildSuggestionsGrid(),
-                SizedBox(height: 30),
+                const SizedBox(height: 20),
 
-                // Privacy Card
+                // ── "Create My Own" Toggle ───────────────────────────────
+                _buildCustomHandleToggle(),
+                const SizedBox(height: 24),
+
+                // ── Privacy Note ─────────────────────────────────────────
                 _buildPrivacyCard(),
-                SizedBox(height: 40),
+                const SizedBox(height: 36),
 
-                // Continue Button
+                // ── Continue Button ──────────────────────────────────────
                 _buildContinueButton(),
-                SizedBox(height: 30),
+                const SizedBox(height: 32),
               ],
             ),
           ),
@@ -186,19 +223,173 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
   Widget _buildProgressIndicator() {
     return Row(
       children: List.generate(4, (index) {
-        bool completed = index < 2;
-        bool active = index == 2;
+        bool active = index <= 2;
         return Expanded(
           child: Container(
             height: 6,
-            margin: EdgeInsets.symmetric(horizontal: 4),
+            margin: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(3),
-              color: (completed || active) ? const Color(0xFF6C47FF) : Colors.grey[300],
+              color: active ? const Color(0xFF6C47FF) : Colors.grey[300],
             ),
           ),
         );
       }),
+    );
+  }
+
+  Widget _buildSuggestionsGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 3.0,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: _suggestions.length,
+      itemBuilder: (context, index) {
+        final suggestion = _suggestions[index];
+        final isSelected = _selectedHandle == suggestion;
+
+        return GestureDetector(
+          onTap: () => _selectSuggestion(suggestion),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? const Color(0xFF6C47FF).withOpacity(0.1)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isSelected ? const Color(0xFF6C47FF) : Colors.grey[200]!,
+                width: isSelected ? 2 : 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isSelected
+                      ? const Color(0xFF6C47FF).withOpacity(0.15)
+                      : Colors.black.withOpacity(0.04),
+                  blurRadius: isSelected ? 12 : 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (isSelected) ...[
+                  const Icon(Icons.check_circle_rounded,
+                      color: Color(0xFF6C47FF), size: 16),
+                  const SizedBox(width: 6),
+                ],
+                Flexible(
+                  child: Text(
+                    suggestion,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isSelected
+                          ? const Color(0xFF6C47FF)
+                          : const Color(0xFF1A1A1A),
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCustomHandleToggle() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // "Create My Own" row toggle
+        GestureDetector(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            setState(() {
+              _showCustomInput = !_showCustomInput;
+              if (_showCustomInput) {
+                _selectedHandle = null;
+                _handleController.clear();
+              }
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+            decoration: BoxDecoration(
+              color: _showCustomInput
+                  ? const Color(0xFF6C47FF).withOpacity(0.06)
+                  : Colors.grey[100],
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _showCustomInput
+                    ? const Color(0xFF6C47FF).withOpacity(0.3)
+                    : Colors.transparent,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF6C47FF).withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.edit_rounded,
+                      color: Color(0xFF6C47FF), size: 18),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Create My Own',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
+                      Text(
+                        '3–20 characters · letters, numbers, underscores',
+                        style: TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  _showCustomInput
+                      ? Icons.keyboard_arrow_up_rounded
+                      : Icons.keyboard_arrow_down_rounded,
+                  color: Colors.grey,
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        // Expandable text field
+        AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          child: _showCustomInput
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: _buildHandleInput(),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 
@@ -219,27 +410,23 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
         controller: _handleController,
         maxLength: 20,
         inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+          FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9_]')),
         ],
         onChanged: (val) {
-          setState(() {
-            _selectedHandle = null; // Clear suggestion selection if typing
-          });
+          setState(() => _selectedHandle = null);
         },
-        validator: (value) {
-          if (value == null || value.isEmpty) return "Handle is required";
-          if (value.length < 3) return "Minimum 3 characters";
-          return null;
-        },
+        validator: _validateHandle,
         decoration: InputDecoration(
-          hintText: "e.g. SleepyMango42",
+          hintText: 'e.g. MysticWolf42',
           hintStyle: TextStyle(color: Colors.grey[400]),
-          prefixIcon: Icon(Icons.person_outline, color: Color(0xFF6C47FF)),
+          prefixIcon:
+              const Icon(Icons.person_outline, color: Color(0xFF6C47FF)),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          counterText: "", // Hidden because custom counter is not requested
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          counterText: '',
           suffixIcon: Padding(
-            padding: EdgeInsets.only(right: 16.0),
+            padding: const EdgeInsets.only(right: 16.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -247,8 +434,9 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
                   valueListenable: _handleController,
                   builder: (context, value, child) {
                     return Text(
-                      "${value.text.length}/20",
-                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                      '${value.text.length}/20',
+                      style:
+                          TextStyle(color: Colors.grey[400], fontSize: 12),
                     );
                   },
                 ),
@@ -260,107 +448,48 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
     );
   }
 
-  Widget _buildSuggestionsGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 3.2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: _suggestions.length,
-      itemBuilder: (context, index) {
-        final suggestion = _suggestions[index];
-        final isSelected = _selectedHandle == suggestion;
-
-        return GestureDetector(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            setState(() {
-              _selectedHandle = suggestion;
-              // Strip emoji for the input field
-              _handleController.text = suggestion.split(' ')[0];
-            });
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF6C47FF).withOpacity(0.1) : Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isSelected ? const Color(0xFF6C47FF) : Colors.grey[200]!,
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                suggestion,
-                style: TextStyle(
-                  color: isSelected ? const Color(0xFF6C47FF) : const Color(0xFF1A1A1A),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildPrivacyCard() {
     return Container(
-      padding: EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
             blurRadius: 20,
-            offset: const Offset(0, 10),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: EdgeInsets.all(12),
+            padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
               color: const Color(0xFFF0EDFF),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(Icons.security, color: Color(0xFF6C47FF)),
+            child: const Icon(Icons.security_rounded,
+                color: Color(0xFF6C47FF), size: 22),
           ),
-          SizedBox(width: 16),
+          const SizedBox(width: 14),
           const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Stay anonymous, stay safe",
+                  'Stay anonymous, stay safe',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
+                    fontSize: 15,
                     color: Color(0xFF1A1A1A),
                   ),
                 ),
-                SizedBox(height: 4),
+                SizedBox(height: 3),
                 Text(
-                  "Your handle is public, but your identity is always private.",
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
+                  'Your handle is public. Your identity is always private.',
+                  style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.4),
                 ),
               ],
             ),
@@ -398,24 +527,33 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
               ),
             ],
           ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Spacer(),
-                Text(
-                  "Continue",
-                  style: TextStyle(
-                    color: Theme.of(context).cardColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+          child: Center(
+            child: _isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Spacer(),
+                      Text(
+                        'Continue',
+                        style: TextStyle(
+                          color: Theme.of(context).cardColor,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      const Padding(
+                        padding: EdgeInsets.only(right: 24),
+                        child: Icon(Icons.arrow_forward, color: Colors.white),
+                      ),
+                    ],
                   ),
-                ),
-                Spacer(),
-                Icon(Icons.arrow_forward, color: Colors.white),
-              ],
-            ),
           ),
         ),
       ),

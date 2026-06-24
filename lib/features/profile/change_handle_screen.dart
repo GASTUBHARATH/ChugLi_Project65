@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:chugli_project65/core/utils/handle_generator.dart';
 import 'package:chugli_project65/data/services/activity_data_service.dart';
 import 'package:chugli_project65/data/services/firestore_room_service.dart';
 
@@ -15,16 +16,16 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
     with SingleTickerProviderStateMixin {
   final TextEditingController _handleController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  
-  String _currentHandle = "Loading...";
-  String? _selectedHandle;
 
-  final List<String> _suggestions = [
-    "NeonTiger44 🐯",
-    "SleepyMango42 🥭",
-    "CryptoPanda99 🐼",
-    "ZenCactus13 🌵",
-  ];
+  String _currentHandle = 'Loading...';
+  String? _selectedSuggestion;
+  bool _isLoading = false;
+
+  // Dynamically generated suggestions — refreshable
+  List<String> _suggestions = [];
+
+  // Offensive word filter
+  static const _blockedWords = ['hate', 'kill', 'sex', 'porn', 'fuck', 'shit', 'ass'];
 
   late AnimationController _buttonController;
   late Animation<double> _buttonScale;
@@ -33,7 +34,8 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
   void initState() {
     super.initState();
     _loadCurrentHandle();
-    
+    _refreshSuggestions();
+
     _buttonController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 100),
@@ -45,29 +47,23 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
 
   Future<void> _loadCurrentHandle() async {
     try {
-      final firestoreHandle = await FirestoreRoomService.instance.getUserHandle();
+      final firestoreHandle =
+          await FirestoreRoomService.instance.getUserHandle();
       if (firestoreHandle != null && firestoreHandle.isNotEmpty) {
-        setState(() {
-          _currentHandle = firestoreHandle;
-        });
+        if (mounted) setState(() => _currentHandle = firestoreHandle);
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('userHandle', firestoreHandle);
         return;
       }
     } catch (e) {
-      debugPrint("Error fetching handle from Firestore: $e");
+      debugPrint('Error fetching handle from Firestore: $e');
     }
 
     final prefs = await SharedPreferences.getInstance();
     final handle = prefs.getString('userHandle');
-    if (handle != null && handle.isNotEmpty) {
-      setState(() {
-        _currentHandle = handle;
-      });
-    } else {
-      setState(() {
-        _currentHandle = "Anonymous User";
-      });
+    if (mounted) {
+      setState(() => _currentHandle =
+          (handle != null && handle.isNotEmpty) ? handle : 'Anonymous User');
     }
   }
 
@@ -78,12 +74,43 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
     super.dispose();
   }
 
+  void _refreshSuggestions() {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _suggestions = HandleGenerator.generateHandles(6);
+      _selectedSuggestion = null;
+    });
+  }
+
+  void _selectSuggestion(String suggestion) {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _selectedSuggestion = suggestion;
+      _handleController.text = HandleGenerator.textOnly(suggestion);
+    });
+  }
+
+  String? _validateHandle(String? value) {
+    if (value == null || value.isEmpty) return 'Handle is required';
+    if (value.length < 3) return 'Minimum 3 characters';
+    if (value.length > 20) return 'Maximum 20 characters';
+    if (!RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(value)) {
+      return 'Letters, numbers and underscores only';
+    }
+    if (value == _currentHandle) return 'This is already your handle';
+    final lower = value.toLowerCase();
+    for (final word in _blockedWords) {
+      if (lower.contains(word)) return 'Please choose a more appropriate handle';
+    }
+    return null;
+  }
+
   void _onHandleUpdate() async {
     final handle = _handleController.text.trim();
     if (handle.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("Please choose a new handle"),
+          content: Text('Please choose a new handle'),
           backgroundColor: Colors.redAccent,
           behavior: SnackBarBehavior.floating,
         ),
@@ -93,13 +120,15 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
 
     if (_formKey.currentState!.validate()) {
       HapticFeedback.mediumImpact();
+      setState(() => _isLoading = true);
+
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('userHandle', handle);
 
       try {
         await FirestoreRoomService.instance.saveUserProfile(handle: handle);
       } catch (e) {
-        debugPrint("Error saving handle to Firestore: $e");
+        debugPrint('Error saving handle to Firestore: $e');
       }
 
       ActivityDataService.instance.addActivity(
@@ -110,11 +139,19 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
       );
 
       if (!mounted) return;
+      setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Handle updated successfully!"),
-          backgroundColor: Colors.green,
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white),
+              const SizedBox(width: 10),
+              Text('Handle updated to "$handle"'),
+            ],
+          ),
+          backgroundColor: const Color(0xFF6C47FF),
           behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       );
       Navigator.pop(context);
@@ -128,109 +165,218 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios, color: Color(0xFF6C47FF), size: 20),
+          icon: const Icon(Icons.arrow_back_ios,
+              color: Color(0xFF6C47FF), size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          "Change Handle",
-          style: TextStyle(color: Color(0xFF1A1A1A), fontWeight: FontWeight.bold),
+          'Change Handle',
+          style: TextStyle(
+              color: Theme.of(context).textTheme.bodyLarge?.color,
+              fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24.0),
           child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Current Handle
+                // Current Handle display
                 Container(
-                  padding: EdgeInsets.all(16),
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6C47FF).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF6C47FF).withOpacity(0.08),
+                        const Color(0xFF7A5CFF).withOpacity(0.04),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: const Color(0xFF6C47FF).withOpacity(0.15)),
                   ),
                   child: Column(
                     children: [
-                      Text(
-                        "Current Handle",
+                      const Text(
+                        'Current Handle',
                         style: TextStyle(
-                          color: Color(0xFF6C47FF),
-                          fontWeight: FontWeight.w600,
-                        ),
+                            color: Color(0xFF6C47FF),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13),
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        _currentHandle,
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
-                        ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.person_rounded,
+                              color: Color(0xFF6C47FF), size: 22),
+                          const SizedBox(width: 8),
+                          Text(
+                            _currentHandle,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1A1A1A),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                SizedBox(height: 30),
+                const SizedBox(height: 28),
 
-                // Handle Input
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: EdgeInsets.only(left: 8.0, bottom: 8.0),
-                    child: Text(
-                      "Enter your new anonymous handle",
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ),
-                _buildHandleInput(),
-                
-                SizedBox(height: 16),
+                // ── Suggestions Section ──────────────────────────────
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Icon(Icons.info_outline, color: Colors.grey, size: 16),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        "You can only change your handle once every 24 hours.",
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    const Text(
+                      'Pick a new handle',
+                      style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A)),
+                    ),
+                    TextButton.icon(
+                      onPressed: _refreshSuggestions,
+                      icon: const Icon(Icons.refresh_rounded,
+                          size: 17, color: Color(0xFF6C47FF)),
+                      label: const Text(
+                        'Generate More',
+                        style: TextStyle(
+                          color: Color(0xFF6C47FF),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        backgroundColor:
+                            const Color(0xFF6C47FF).withOpacity(0.08),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20)),
                       ),
                     ),
                   ],
                 ),
-                SizedBox(height: 30),
+                const SizedBox(height: 14),
+                _buildSuggestionsGrid(),
+                const SizedBox(height: 24),
 
-                // Suggestions Section
+                // ── Custom Handle Input ──────────────────────────────
                 const Align(
                   alignment: Alignment.centerLeft,
                   child: Padding(
-                    padding: EdgeInsets.only(left: 8.0, bottom: 12.0),
+                    padding: EdgeInsets.only(left: 4, bottom: 10),
                     child: Text(
-                      "Suggestions for you",
+                      'Or type your own handle',
                       style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
-                      ),
+                          color: Colors.grey,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14),
                     ),
                   ),
                 ),
-                _buildSuggestionsGrid(),
-                SizedBox(height: 40),
+                _buildHandleInput(),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.grey, size: 14),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '3–20 characters · letters, numbers and underscores only · no offensive words',
+                        style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 36),
 
-                // Update Button
                 _buildUpdateButton(),
+                const SizedBox(height: 24),
               ],
             ),
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSuggestionsGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        childAspectRatio: 3.0,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+      ),
+      itemCount: _suggestions.length,
+      itemBuilder: (context, index) {
+        final suggestion = _suggestions[index];
+        final isSelected = _selectedSuggestion == suggestion;
+
+        return GestureDetector(
+          onTap: () => _selectSuggestion(suggestion),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? const Color(0xFF6C47FF).withOpacity(0.1)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: isSelected ? const Color(0xFF6C47FF) : Colors.grey[200]!,
+                width: isSelected ? 2 : 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isSelected
+                      ? const Color(0xFF6C47FF).withOpacity(0.15)
+                      : Colors.black.withOpacity(0.04),
+                  blurRadius: isSelected ? 12 : 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (isSelected) ...[
+                  const Icon(Icons.check_circle_rounded,
+                      color: Color(0xFF6C47FF), size: 16),
+                  const SizedBox(width: 6),
+                ],
+                Flexible(
+                  child: Text(
+                    suggestion,
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: isSelected
+                          ? const Color(0xFF6C47FF)
+                          : const Color(0xFF1A1A1A),
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -251,101 +397,35 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
         controller: _handleController,
         maxLength: 20,
         inputFormatters: [
-          FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9]')),
+          FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9_]')),
         ],
-        onChanged: (val) {
-          setState(() {
-            _selectedHandle = null;
-          });
-        },
-        validator: (value) {
-          if (value == null || value.isEmpty) return "Handle is required";
-          if (value.length < 3) return "Minimum 3 characters";
-          if (value == _currentHandle) return "This is already your handle";
-          return null;
-        },
+        onChanged: (val) => setState(() => _selectedSuggestion = null),
+        validator: _validateHandle,
         decoration: InputDecoration(
-          hintText: "e.g. NeonTiger44",
+          hintText: 'e.g. SilentFox77',
           hintStyle: TextStyle(color: Colors.grey[400]),
-          prefixIcon: Icon(Icons.edit, color: Color(0xFF6C47FF)),
+          prefixIcon: const Icon(Icons.edit_rounded, color: Color(0xFF6C47FF)),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-          counterText: "",
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          counterText: '',
           suffixIcon: Padding(
-            padding: EdgeInsets.only(right: 16.0),
+            padding: const EdgeInsets.only(right: 16.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ValueListenableBuilder(
                   valueListenable: _handleController,
-                  builder: (context, value, child) {
-                    return Text(
-                      "${value.text.length}/20",
-                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                    );
-                  },
+                  builder: (context, value, child) => Text(
+                    '${value.text.length}/20',
+                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                  ),
                 ),
               ],
             ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildSuggestionsGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 3.2,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-      ),
-      itemCount: _suggestions.length,
-      itemBuilder: (context, index) {
-        final suggestion = _suggestions[index];
-        final isSelected = _selectedHandle == suggestion;
-
-        return GestureDetector(
-          onTap: () {
-            HapticFeedback.lightImpact();
-            setState(() {
-              _selectedHandle = suggestion;
-              _handleController.text = suggestion.split(' ')[0];
-            });
-          },
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF6C47FF).withOpacity(0.1) : Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: isSelected ? const Color(0xFF6C47FF) : Colors.grey[200]!,
-                width: 1.5,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.03),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                suggestion,
-                style: TextStyle(
-                  color: isSelected ? const Color(0xFF6C47FF) : const Color(0xFF1A1A1A),
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  fontSize: 14,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 
@@ -378,14 +458,21 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
             ],
           ),
           child: Center(
-            child: Text(
-              "Update Handle",
-              style: TextStyle(
-                color: Theme.of(context).cardColor,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: _isLoading
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                : Text(
+                    'Update Handle',
+                    style: TextStyle(
+                      color: Theme.of(context).cardColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         ),
       ),
