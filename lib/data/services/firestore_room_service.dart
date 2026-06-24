@@ -175,6 +175,15 @@ class FirestoreRoomService {
   }) async {
     final now = DateTime.now();
     final uid = _uid;
+
+    // Encode location as geohash so the Cloud Function can use bounding-box
+    // queries (geohashQueryBounds) to find rooms near a given point.
+    String? roomGeohash;
+    if (latitude != null && longitude != null) {
+      final hasher = GeoHasher();
+      roomGeohash = hasher.encode(longitude, latitude);
+    }
+
     final docRef = await _db.collection('rooms').add({
       'title': title,
       'category': category,
@@ -191,6 +200,7 @@ class FirestoreRoomService {
       'reactions': <String>[],
       'latitude': latitude,
       'longitude': longitude,
+      'geohash': roomGeohash,
     });
 
     await _logActivity(

@@ -5,11 +5,17 @@ import 'firebase_options.dart';
 import 'package:chugli_project65/features/onboarding/splash_screen.dart';
 import 'package:chugli_project65/core/theme/theme_provider.dart';
 import 'package:chugli_project65/core/theme/app_theme.dart';
+import 'package:chugli_project65/data/services/fcm_service.dart';
+import 'package:chugli_project65/features/rooms/room_conversation_screen.dart';
+
+/// Global navigator key — used by FCMService to navigate from notification taps
+/// without needing a BuildContext.
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
+  // Initialize Firebase.
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -26,6 +32,9 @@ void main() async {
     debugPrint('⚠️ Anonymous sign-in failed: $e');
   }
 
+  // Initialize FCM: registers handlers for background, foreground, and taps.
+  await FCMService.instance.initialize(navigatorKey);
+
   runApp(const MyApp());
 }
 
@@ -38,12 +47,25 @@ class MyApp extends StatelessWidget {
       listenable: globalThemeProvider,
       builder: (context, _) {
         return MaterialApp(
+          navigatorKey: navigatorKey,
           debugShowCheckedModeBanner: false,
           title: 'ChugLi',
           themeMode: globalThemeProvider.themeMode,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           home: const SplashScreen(),
+          // Named route so FCMService can navigate to a room from a tap.
+          onGenerateRoute: (settings) {
+            if (settings.name == '/room') {
+              final roomId = settings.arguments as String?;
+              if (roomId != null && roomId.isNotEmpty) {
+                return MaterialPageRoute(
+                  builder: (_) => RoomConversationScreen(roomId: roomId),
+                );
+              }
+            }
+            return null; // Fall through to home.
+          },
         );
       },
     );

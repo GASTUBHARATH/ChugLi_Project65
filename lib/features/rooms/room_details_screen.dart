@@ -17,13 +17,23 @@ class RoomDetailsScreen extends StatefulWidget {
 
 class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
   Timer? _timer;
+  late Stream<Map<String, dynamic>?> _roomStream;
 
   @override
   void initState() {
     super.initState();
+    _roomStream = FirestoreRoomService.instance.roomStream(widget.roomId);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
+  }
+
+  @override
+  void didUpdateWidget(RoomDetailsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.roomId != oldWidget.roomId) {
+      _roomStream = FirestoreRoomService.instance.roomStream(widget.roomId);
+    }
   }
 
   @override
@@ -119,7 +129,7 @@ class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<Map<String, dynamic>?>(
-      stream: FirestoreRoomService.instance.roomStream(widget.roomId),
+      stream: _roomStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator(color: Color(0xFF6C47FF))));
