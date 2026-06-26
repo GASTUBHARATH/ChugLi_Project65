@@ -2,14 +2,23 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Admin check ─────────────────────────────────────────────────
+    // Admins are users listed in the /admins collection.
+    // The mobile app never writes to this collection, so it is safe.
+    function isAdmin() {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
     // ── Rooms ──────────────────────────────────────────────────────
     match /rooms/{roomId} {
       allow read: if request.auth != null;
       allow create: if request.auth != null
                     && request.resource.data.createdBy == request.auth.uid;
       allow update: if request.auth != null;
-      allow delete: if request.auth != null
-                    && resource.data.createdBy == request.auth.uid;
+      // Admins can delete any room; creators can delete their own
+      allow delete: if isAdmin() ||
+                    (request.auth != null && resource.data.createdBy == request.auth.uid);
 
       // Messages sub-collection
       match /messages/{messageId} {
@@ -17,43 +26,58 @@ service cloud.firestore {
         allow create: if request.auth != null
                       && request.resource.data.uid == request.auth.uid;
         allow update: if request.auth != null;
-        allow delete: if false;
+        // Admins can delete messages for moderation
+        allow delete: if isAdmin();
       }
 
-      // Reports sub-collection — authenticated users can submit and read reports
+      // Reports sub-collection
       match /reports/{reportId} {
         allow read: if request.auth != null;
         // Only allow creating a report for someone else
         allow create: if request.auth != null
                       && request.resource.data.reporterUid == request.auth.uid
                       && request.resource.data.reportedUid != request.auth.uid;
-        allow update, delete: if false;
+        // Admins can update report status (Pending -> Resolved/Rejected)
+        allow update: if isAdmin();
+        allow delete: if false;
       }
 
-      // BannedUsers sub-collection — only readable by authenticated users
-      // Written only by the Cloud Function / service-level logic (from client)
+      // BannedUsers sub-collection
       match /bannedUsers/{uid} {
         allow read: if request.auth != null;
-        // Allow write so the client can create ban documents after threshold check
-        allow write: if request.auth != null;
+        allow write: if request.auth != null || isAdmin();
       }
     }
 
     // ── Users ──────────────────────────────────────────────────────
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      // Users can only read/write their own document
+      // Admins can read all user documents
+      allow read: if (request.auth != null && request.auth.uid == uid) || isAdmin();
+      allow write: if request.auth != null && request.auth.uid == uid;
+
+      // Admins can update user status fields (e.g. isBanned, isSuspended)
+      allow update: if isAdmin();
 
       // Activity sub-collection
       match /activity/{activityId} {
         allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read: if isAdmin();
       }
 
-      // Personal reports history — only the reporter can read their own
+      // Personal reports history
       match /reports/{reportId} {
-        allow read: if request.auth != null && request.auth.uid == uid;
+        allow read: if (request.auth != null && request.auth.uid == uid) || isAdmin();
         allow create: if request.auth != null && request.auth.uid == uid;
         allow update, delete: if false;
       }
+    }
+
+    // ── Admins collection ──────────────────────────────────────────
+    // Only admins can read the admins list; no one can write from client
+    match /admins/{adminUid} {
+      allow read: if isAdmin();
+      allow write: if false; // Managed only via Firebase Console
     }
   }
 }
