@@ -2,6 +2,10 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+// ── Notification channel IDs ──────────────────────────────────────────────────
+const String _nearbyRoomsChannelId = 'nearby_rooms';
+const String _broadcastsChannelId = 'broadcasts';
+
 // ── Background message handler ────────────────────────────────────────────────
 // MUST be a top-level function (not inside a class) — Flutter's isolate rules.
 @pragma('vm:entry-point')
@@ -14,12 +18,21 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('  data  : ${message.data}');
 }
 
-// ── Android notification channel ──────────────────────────────────────────────
+// ── Android notification channels ────────────────────────────────────────────
 const AndroidNotificationChannel _nearbyRoomsChannel = AndroidNotificationChannel(
-  'nearby_rooms',
+  _nearbyRoomsChannelId,
   'Nearby Rooms',
   description: 'Notifications when new rooms open near you.',
   importance: Importance.high,
+  playSound: true,
+  enableVibration: true,
+);
+
+const AndroidNotificationChannel _broadcastsChannel = AndroidNotificationChannel(
+  _broadcastsChannelId,
+  'Announcements',
+  description: 'Important announcements from the Chugli team.',
+  importance: Importance.max,
   playSound: true,
   enableVibration: true,
 );
@@ -36,6 +49,24 @@ class FCMService {
   // Injected from main.dart so we can navigate from notification taps.
   GlobalKey<NavigatorState>? _navigatorKey;
 
+  // Broadcast listeners — widgets can register to show an in-app banner.
+  final List<void Function(String title, String body)> _broadcastListeners = [];
+
+  // ── Broadcast listener registration ────────────────────────────────────────
+  void addBroadcastListener(void Function(String title, String body) listener) {
+    _broadcastListeners.add(listener);
+  }
+
+  void removeBroadcastListener(void Function(String title, String body) listener) {
+    _broadcastListeners.remove(listener);
+  }
+
+  void _notifyBroadcastListeners(String title, String body) {
+    for (final listener in _broadcastListeners) {
+      listener(title, body);
+    }
+  }
+
   // ── Public: call once in main() after Firebase.initializeApp ─────────────
   Future<void> initialize(GlobalKey<NavigatorState> navigatorKey) async {
     _navigatorKey = navigatorKey;
@@ -43,11 +74,11 @@ class FCMService {
     // 1. Register background handler (must be done before any other setup).
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
-    // 2. Set up Android local notification channel.
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(_nearbyRoomsChannel);
+    // 2. Set up Android local notification channels.
+    final androidPlugin = _localNotifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+    await androidPlugin?.createNotificationChannel(_nearbyRoomsChannel);
+    await androidPlugin?.createNotificationChannel(_broadcastsChannel);
 
     // 3. Initialize local notifications plugin.
     const initSettings = InitializationSettings(
@@ -127,19 +158,34 @@ class FCMService {
 
     final notification = message.notification;
     final android = message.notification?.android;
+    final isBroadcast = message.data['type'] == 'broadcast';
 
-    // Show as local notification so user sees the system banner even in-app.
     if (notification != null) {
+      // For broadcasts: notify in-app listeners (shows a banner) AND
+      // still show a system notification for visibility.
+      if (isBroadcast) {
+        _notifyBroadcastListeners(
+          notification.title ?? '📣 Announcement',
+          notification.body ?? '',
+        );
+      }
+
+      // Show a system local notification for all types
+      final channelId = isBroadcast ? _broadcastsChannelId : _nearbyRoomsChannelId;
+      final channelName = isBroadcast ? _broadcastsChannel.name : _nearbyRoomsChannel.name;
+
       _localNotifications.show(
         notification.hashCode,
         notification.title,
         notification.body,
         NotificationDetails(
           android: AndroidNotificationDetails(
-            _nearbyRoomsChannel.id,
-            _nearbyRoomsChannel.name,
-            channelDescription: _nearbyRoomsChannel.description,
-            importance: Importance.high,
+            channelId,
+            channelName,
+            channelDescription: isBroadcast
+                ? _broadcastsChannel.description
+                : _nearbyRoomsChannel.description,
+            importance: isBroadcast ? Importance.max : Importance.high,
             priority: Priority.high,
             icon: android?.smallIcon ?? '@mipmap/ic_launcher',
             playSound: true,
@@ -151,8 +197,7 @@ class FCMService {
             presentSound: true,
           ),
         ),
-        // Encode roomId so the tap handler can navigate.
-        payload: message.data['roomId'],
+        payload: isBroadcast ? null : message.data['roomId'],
       );
     }
   }

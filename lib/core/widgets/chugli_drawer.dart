@@ -346,7 +346,9 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
         Navigator.pop(context); // Dismiss loading
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+          MaterialPageRoute(
+            builder: (_) => const WelcomeScreen(showAccountDeletedMessage: true),
+          ),
           (route) => false,
         );
       }

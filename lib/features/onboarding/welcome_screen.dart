@@ -4,7 +4,8 @@ import 'dart:math' as math;
 import 'package:chugli_project65/features/onboarding/location_permission_screen.dart';
 
 class WelcomeScreen extends StatefulWidget {
-  const WelcomeScreen({super.key});
+  final bool showAccountDeletedMessage;
+  const WelcomeScreen({super.key, this.showAccountDeletedMessage = false});
 
   @override
   State<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -22,6 +23,20 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   @override
   void initState() {
     super.initState();
+
+    if (widget.showAccountDeletedMessage) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Your account deleted successfully.'),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+      });
+    }
 
     // Background Gradient Animation
     _backgroundController = AnimationController(

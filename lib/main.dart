@@ -8,6 +8,7 @@ import 'package:chugli_project65/core/theme/app_theme.dart';
 import 'package:chugli_project65/data/services/fcm_service.dart';
 import 'package:chugli_project65/features/rooms/room_conversation_screen.dart';
 import 'package:chugli_project65/core/widgets/user_status_wrapper.dart';
+import 'package:chugli_project65/core/widgets/broadcast_banner_wrapper.dart';
 
 /// Global navigator key — used by FCMService to navigate from notification taps
 /// without needing a BuildContext.
@@ -51,7 +52,9 @@ class MyApp extends StatelessWidget {
           navigatorKey: navigatorKey,
           debugShowCheckedModeBanner: false,
           title: 'ChugLi',
-          builder: (context, child) => UserStatusWrapper(child: child!),
+          builder: (context, child) => BroadcastBannerWrapper(
+            child: UserStatusWrapper(child: child!),
+          ),
           themeMode: globalThemeProvider.themeMode,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,

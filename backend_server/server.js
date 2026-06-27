@@ -206,3 +206,190 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log(`🚀 Dummy HTTP server listening on port ${PORT}`);
 });
+
+// ── Broadcast listener ────────────────────────────────────────────────────────
+// Listens for new documents in the `broadcasts` collection (created by admin).
+// When a new broadcast is detected, it sends an FCM push notification to ALL
+// users who have an fcmToken stored in their Firestore user document.
+
+const BROADCAST_START_TIME = admin.firestore.Timestamp.now();
+
+console.log("📣 Listening for new broadcasts...");
+
+db.collection("broadcasts")
+  .where("createdAt", ">", BROADCAST_START_TIME)
+  .onSnapshot(async (snapshot) => {
+    snapshot.docChanges().forEach(async (change) => {
+      if (change.type === "added") {
+        const broadcast = change.doc.data();
+        const broadcastId = change.doc.id;
+        await processBroadcast(broadcastId, broadcast);
+      }
+    });
+  }, (err) => {
+    console.error("❌ Error listening to broadcasts:", err);
+  });
+
+async function processBroadcast(broadcastId, broadcast) {
+  const title = broadcast.title ?? "📣 Announcement";
+  const message = broadcast.message ?? "";
+  const target = broadcast.target ?? "all"; // "all" or "active_rooms"
+  const createdBy = broadcast.createdBy ?? "Admin";
+
+  console.log(`\n📣 New broadcast "${title}" from ${createdBy} (target: ${target})`);
+
+  let tokensToSend = [];
+
+  if (target === "active_rooms") {
+    // Send only to users who are currently in an active room
+    tokensToSend = await getTokensForActiveRoomUsers();
+  } else {
+    // Send to ALL users who have FCM tokens
+    tokensToSend = await getAllUserTokens();
+  }
+
+  if (tokensToSend.length === 0) {
+    console.log("ℹ️  No users with FCM tokens found for this broadcast.");
+    return;
+  }
+
+  console.log(`📲 Sending broadcast to ${tokensToSend.length} device(s)...`);
+
+  // FCM allows max 500 tokens per multicast — batch them
+  const BATCH_SIZE = 500;
+  let totalSent = 0;
+  let totalFailed = 0;
+
+  for (let i = 0; i < tokensToSend.length; i += BATCH_SIZE) {
+    const batch = tokensToSend.slice(i, i + BATCH_SIZE);
+
+    const fcmMessage = {
+      notification: {
+        title: title,
+        body: message,
+      },
+      data: {
+        type: "broadcast",
+        broadcastId: broadcastId,
+        broadcastTitle: title,
+        broadcastMessage: message,
+      },
+      android: {
+        priority: "high",
+        notification: {
+          channelId: "nearby_rooms",
+          priority: "high",
+          defaultSound: true,
+          clickAction: "FLUTTER_NOTIFICATION_CLICK",
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+            badge: 1,
+          },
+        },
+      },
+      tokens: batch,
+    };
+
+    try {
+      const response = await getMessaging().sendEachForMulticast(fcmMessage);
+      totalSent += response.successCount;
+      totalFailed += response.failureCount;
+
+      // Clean up stale tokens
+      const staleTokens = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          const code = resp.error?.code ?? "";
+          if (
+            code === "messaging/registration-token-not-registered" ||
+            code === "messaging/invalid-registration-token"
+          ) {
+            staleTokens.push(batch[idx]);
+          }
+        }
+      });
+
+      if (staleTokens.length > 0) {
+        const usersWithStale = await db
+          .collection("users")
+          .where("fcmTokens", "array-contains-any", staleTokens)
+          .get();
+        const cleanupBatch = db.batch();
+        for (const doc of usersWithStale.docs) {
+          const tokens = doc.data().fcmTokens ?? [];
+          const cleaned = tokens.filter((t) => !staleTokens.includes(t));
+          cleanupBatch.update(doc.ref, { fcmTokens: cleaned });
+        }
+        await cleanupBatch.commit();
+        console.log(`🧹 Removed ${staleTokens.length} stale tokens.`);
+      }
+    } catch (err) {
+      console.error("❌ FCM broadcast send failed:", err);
+    }
+  }
+
+  console.log(`✅ Broadcast complete: ${totalSent} sent, ${totalFailed} failed.`);
+}
+
+// Get FCM tokens from ALL users in the system
+async function getAllUserTokens() {
+  const snapshot = await db.collection("users").get();
+  const tokens = [];
+  for (const doc of snapshot.docs) {
+    const fcmTokens = doc.data().fcmTokens ?? [];
+    for (const token of fcmTokens) {
+      if (token && typeof token === "string") {
+        tokens.push(token);
+      }
+    }
+  }
+  return tokens;
+}
+
+// Get FCM tokens only from users currently inside an active room
+async function getTokensForActiveRoomUsers() {
+  // Query rooms that are currently active (not expired)
+  const now = admin.firestore.Timestamp.now();
+  const roomsSnap = await db
+    .collection("rooms")
+    .where("expiresAt", ">", now)
+    .get();
+
+  const uidsInRooms = new Set();
+  for (const roomDoc of roomsSnap.docs) {
+    // Get participants sub-collection
+    const participantsSnap = await roomDoc.ref.collection("participants").get();
+    for (const p of participantsSnap.docs) {
+      uidsInRooms.add(p.id);
+    }
+  }
+
+  if (uidsInRooms.size === 0) return [];
+
+  // Get tokens for those UIDs
+  const tokens = [];
+  const uidArray = Array.from(uidsInRooms);
+
+  // Firestore `in` queries allow max 30 items — batch them
+  for (let i = 0; i < uidArray.length; i += 30) {
+    const batchUids = uidArray.slice(i, i + 30);
+    const usersSnap = await db
+      .collection("users")
+      .where(admin.firestore.FieldPath.documentId(), "in", batchUids)
+      .get();
+    for (const doc of usersSnap.docs) {
+      const fcmTokens = doc.data().fcmTokens ?? [];
+      for (const token of fcmTokens) {
+        if (token && typeof token === "string") {
+          tokens.push(token);
+        }
+      }
+    }
+  }
+
+  return tokens;
+}

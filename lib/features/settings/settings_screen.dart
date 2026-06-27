@@ -233,7 +233,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
         // Navigate to WelcomeScreen
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+          MaterialPageRoute(
+            builder: (_) => const WelcomeScreen(showAccountDeletedMessage: true),
+          ),
           (route) => false,
         );
       }
