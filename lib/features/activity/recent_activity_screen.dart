@@ -105,7 +105,7 @@ class _RecentActivityScreenState extends State<RecentActivityScreen> with Single
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.history, size: 64, color: Colors.grey.withOpacity(0.3)),
+                    Icon(Icons.history, size: 64, color: Colors.grey.withValues(alpha: 0.3)),
                     SizedBox(height: 16),
                     Text("No activity found.", style: TextStyle(color: Colors.grey, fontSize: 16)),
                   ],
@@ -170,7 +170,7 @@ class _RecentActivityScreenState extends State<RecentActivityScreen> with Single
                         style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge!.color),
                       ),
                     ),
-                    ...items.map((item) => _buildActivityCard(context, item)).toList(),
+                    ...items.map((item) => _buildActivityCard(context, item)),
                   ],
                 );
               },
@@ -186,7 +186,7 @@ class _RecentActivityScreenState extends State<RecentActivityScreen> with Single
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.1),
+          color: Colors.grey.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
         ),
         child: TextField(
@@ -252,9 +252,9 @@ class _RecentActivityScreenState extends State<RecentActivityScreen> with Single
         decoration: BoxDecoration(
           color: Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey.withOpacity(0.1)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+            BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2)),
           ],
         ),
         child: Row(
@@ -263,7 +263,7 @@ class _RecentActivityScreenState extends State<RecentActivityScreen> with Single
             Container(
               padding: EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 20),

@@ -32,7 +32,7 @@ class AboutChugliScreen extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
-                    BoxShadow(color: const Color(0xFF6C47FF).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))
+                    BoxShadow(color: const Color(0xFF6C47FF).withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 8))
                   ],
                 ),
                 child: Center(

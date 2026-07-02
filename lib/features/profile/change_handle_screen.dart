@@ -192,15 +192,15 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        const Color(0xFF6C47FF).withOpacity(0.08),
-                        const Color(0xFF7A5CFF).withOpacity(0.04),
+                        const Color(0xFF6C47FF).withValues(alpha: 0.08),
+                        const Color(0xFF7A5CFF).withValues(alpha: 0.04),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                        color: const Color(0xFF6C47FF).withOpacity(0.15)),
+                        color: const Color(0xFF6C47FF).withValues(alpha: 0.15)),
                   ),
                   child: Column(
                     children: [
@@ -260,7 +260,7 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 6),
                         backgroundColor:
-                            const Color(0xFF6C47FF).withOpacity(0.08),
+                            const Color(0xFF6C47FF).withValues(alpha: 0.08),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20)),
                       ),
@@ -332,7 +332,7 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
               color: isSelected
-                  ? const Color(0xFF6C47FF).withOpacity(0.1)
+                  ? const Color(0xFF6C47FF).withValues(alpha: 0.1)
                   : Colors.white,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
@@ -342,8 +342,8 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
               boxShadow: [
                 BoxShadow(
                   color: isSelected
-                      ? const Color(0xFF6C47FF).withOpacity(0.15)
-                      : Colors.black.withOpacity(0.04),
+                      ? const Color(0xFF6C47FF).withValues(alpha: 0.15)
+                      : Colors.black.withValues(alpha: 0.04),
                   blurRadius: isSelected ? 12 : 8,
                   offset: const Offset(0, 4),
                 ),
@@ -387,7 +387,7 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -451,7 +451,7 @@ class _ChangeHandleScreenState extends State<ChangeHandleScreen>
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF6C47FF).withOpacity(0.4),
+                color: const Color(0xFF6C47FF).withValues(alpha: 0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),

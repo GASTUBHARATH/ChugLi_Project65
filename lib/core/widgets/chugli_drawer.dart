@@ -17,7 +17,7 @@ import 'package:chugli_project65/features/activity/recent_activity_screen.dart';
 class ChugliDrawer extends StatefulWidget {
   final VoidCallback? onRadiusChanged;
 
-  ChugliDrawer({super.key, this.onRadiusChanged});
+  const ChugliDrawer({super.key, this.onRadiusChanged});
 
   @override
   State<ChugliDrawer> createState() => _ChugliDrawerState();
@@ -224,14 +224,14 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
           height: 70,
           padding: EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: isSelected ? primaryColor.withOpacity(0.08) : Colors.transparent,
+            color: isSelected ? primaryColor.withValues(alpha: 0.08) : Colors.transparent,
             borderRadius: BorderRadius.circular(20),
             border: isSelected 
                 ? Border.all(color: primaryColor, width: 1.5) 
                 : Border.all(color: Colors.transparent, width: 1.5),
             boxShadow: isSelected ? [
               BoxShadow(
-                color: primaryColor.withOpacity(0.1),
+                color: primaryColor.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               )
@@ -264,7 +264,7 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
                         subtitle,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isSelected ? primaryColor.withOpacity(0.7) : Colors.grey,
+                          color: isSelected ? primaryColor.withValues(alpha: 0.7) : Colors.grey,
                         ),
                       ),
                   ],
@@ -398,7 +398,7 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

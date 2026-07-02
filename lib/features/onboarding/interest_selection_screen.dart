@@ -231,7 +231,7 @@ class _InterestSelectionScreenState extends State<InterestSelectionScreen>
             color: isEnabled ? null : Colors.grey[400],
             boxShadow: isEnabled ? [
               BoxShadow(
-                color: const Color(0xFF6C47FF).withOpacity(0.4),
+                color: const Color(0xFF6C47FF).withValues(alpha: 0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -284,14 +284,14 @@ class _InterestCard extends StatelessWidget {
               : null,
           color: isSelected ? null : Colors.white,
           border: Border.all(
-            color: isSelected ? Colors.transparent : Colors.grey.withOpacity(0.2),
+            color: isSelected ? Colors.transparent : Colors.grey.withValues(alpha: 0.2),
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
               color: isSelected 
-                  ? const Color(0xFF6C47FF).withOpacity(0.3) 
-                  : Colors.black.withOpacity(0.03),
+                  ? const Color(0xFF6C47FF).withValues(alpha: 0.3) 
+                  : Colors.black.withValues(alpha: 0.03),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),

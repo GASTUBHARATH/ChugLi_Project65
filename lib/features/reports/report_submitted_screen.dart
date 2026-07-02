@@ -19,7 +19,7 @@ class ReportSubmittedScreen extends StatelessWidget {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF00C48C).withOpacity(0.1),
+                  color: const Color(0xFF00C48C).withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -61,7 +61,7 @@ class ReportSubmittedScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
                     )
@@ -97,7 +97,7 @@ class ReportSubmittedScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     elevation: 5,
-                    shadowColor: const Color(0xFF6C47FF).withOpacity(0.5),
+                    shadowColor: const Color(0xFF6C47FF).withValues(alpha: 0.5),
                   ),
                   child: Text(
                     'Got It',

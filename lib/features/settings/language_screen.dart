@@ -106,7 +106,7 @@ class _LanguageScreenState extends State<LanguageScreen> {
                             onChanged: (val) {
                               if (val != null) setState(() => _selectedLanguage = val);
                             },
-                          )).toList(),
+                          )),
                     ]
                   ],
                 ),

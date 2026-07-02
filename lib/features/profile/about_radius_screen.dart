@@ -95,12 +95,12 @@ class _AboutRadiusScreenState extends State<AboutRadiusScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
                 ],
-                border: Border.all(color: const Color(0xFF6C47FF).withOpacity(0.1)),
+                border: Border.all(color: const Color(0xFF6C47FF).withValues(alpha: 0.1)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,7 +144,7 @@ class _AboutRadiusScreenState extends State<AboutRadiusScreen> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF00C48C).withOpacity(0.1),
+                color: const Color(0xFF00C48C).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Row(
@@ -217,7 +217,7 @@ class _AboutRadiusScreenState extends State<AboutRadiusScreen> {
                 Expanded(
                   child: Container(
                     width: 2,
-                    color: const Color(0xFF6C47FF).withOpacity(0.2),
+                    color: const Color(0xFF6C47FF).withValues(alpha: 0.2),
                   ),
                 ),
             ],

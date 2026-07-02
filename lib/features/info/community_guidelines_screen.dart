@@ -35,7 +35,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
-                  BoxShadow(color: const Color(0xFF6C47FF).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))
+                  BoxShadow(color: const Color(0xFF6C47FF).withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 8))
                 ],
               ),
               child: Row(
@@ -63,7 +63,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
               ),
               child: Column(
                 children: [
@@ -99,7 +99,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
         Container(
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFF6C47FF).withOpacity(0.1),
+            color: const Color(0xFF6C47FF).withValues(alpha: 0.1),
             shape: BoxShape.circle,
           ),
           child: Icon(icon, color: const Color(0xFF6C47FF), size: 20),

@@ -64,9 +64,9 @@ class PrivacySafetyScreen extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF6C47FF).withOpacity(0.1),
+                  color: const Color(0xFF6C47FF).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF6C47FF).withOpacity(0.3)),
+                  border: Border.all(color: const Color(0xFF6C47FF).withValues(alpha: 0.3)),
                 ),
                 child: Center(
                   child: Text(
@@ -105,7 +105,7 @@ class PrivacySafetyScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -124,7 +124,7 @@ class PrivacySafetyScreen extends StatelessWidget {
       leading: Container(
         padding: EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: useColor.withOpacity(0.1),
+          color: useColor.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: useColor, size: 20),

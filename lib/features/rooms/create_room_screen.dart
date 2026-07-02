@@ -182,7 +182,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                     duration: const Duration(milliseconds: 200),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? const Color(0xFF6C47FF).withOpacity(0.1)
+                          ? const Color(0xFF6C47FF).withValues(alpha: 0.1)
                           : Colors.white,
                       border: Border.all(
                         color: isSelected
@@ -195,7 +195,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                           ? []
                           : [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
+                                color: Colors.black.withValues(alpha: 0.04),
                                 blurRadius: 4,
                                 offset: const Offset(0, 2),
                               )
@@ -362,7 +362,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
             SizedBox(height: 12),
             Container(
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.05),
+                color: Colors.black.withValues(alpha: 0.05),
                 borderRadius: BorderRadius.circular(30),
               ),
               padding: EdgeInsets.all(4),
@@ -384,7 +384,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
+                                    color: Colors.black.withValues(alpha: 0.1),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   )
@@ -421,7 +421,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF6C47FF).withOpacity(0.3),
+                    color: const Color(0xFF6C47FF).withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   )

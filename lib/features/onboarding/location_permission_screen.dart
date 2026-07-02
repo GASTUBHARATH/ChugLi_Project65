@@ -326,7 +326,7 @@ class __LocationPermissionIllustrationState extends State<_LocationPermissionIll
                   decoration: BoxDecoration(
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
+                        color: Colors.black.withValues(alpha: 0.1),
                         blurRadius: 10,
                         spreadRadius: 2,
                       ),
@@ -362,7 +362,7 @@ class _MapBasePainter extends CustomPainter {
       ..strokeWidth = 1.0;
 
     for (var i = 1; i <= 4; i++) {
-      paint.color = Colors.black.withOpacity(0.02 * i);
+      paint.color = Colors.black.withValues(alpha: 0.02 * i);
       canvas.drawOval(
         Rect.fromCenter(
           center: center,
@@ -400,7 +400,7 @@ class _PulseWave extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: const Color(0xFF6C47FF).withOpacity(0.15),
+                  color: const Color(0xFF6C47FF).withValues(alpha: 0.15),
                   width: 1.5,
                 ),
               ),
@@ -443,7 +443,7 @@ class _NetworkPin extends StatelessWidget {
                 color: color,
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(color: color.withOpacity(0.4), blurRadius: 8, spreadRadius: 1),
+                  BoxShadow(color: color.withValues(alpha: 0.4), blurRadius: 8, spreadRadius: 1),
                 ],
               ),
             ),
@@ -467,7 +467,7 @@ class _MainHeroPin extends StatelessWidget {
           size: 90,
           color: const Color(0xFFFF6B6B),
           shadows: [
-            Shadow(color: const Color(0xFFFF6B6B).withOpacity(0.8), blurRadius: 20),
+            Shadow(color: const Color(0xFFFF6B6B).withValues(alpha: 0.8), blurRadius: 20),
           ],
         ),
         Positioned(
@@ -543,7 +543,7 @@ class _AnimatedButtonState extends State<_AnimatedButton>
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: widget.color.withOpacity(0.3),
+                color: widget.color.withValues(alpha: 0.3),
                 blurRadius: 15,
                 offset: const Offset(0, 8),
               ),

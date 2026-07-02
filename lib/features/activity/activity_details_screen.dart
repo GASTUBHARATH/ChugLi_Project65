@@ -80,7 +80,7 @@ class ActivityDetailsScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -94,7 +94,7 @@ class ActivityDetailsScreen extends StatelessWidget {
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
+                  color: color.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(icon, color: color, size: 28),
@@ -130,9 +130,9 @@ class ActivityDetailsScreen extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.grey.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.withOpacity(0.2)),
+                border: Border.all(color: Colors.grey.withValues(alpha: 0.2)),
               ),
               child: Text(
                 '“${activity['preview']}”',
@@ -159,7 +159,7 @@ class ActivityDetailsScreen extends StatelessWidget {
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2)),
+              BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 8, offset: const Offset(0, 2)),
             ],
           ),
           child: Column(
@@ -202,7 +202,7 @@ class ActivityDetailsScreen extends StatelessWidget {
             ],
           ),
         ),
-        if (!isLast) Divider(height: 1, indent: 16, endIndent: 16, color: Colors.grey.withOpacity(0.2)),
+        if (!isLast) Divider(height: 1, indent: 16, endIndent: 16, color: Colors.grey.withValues(alpha: 0.2)),
       ],
     );
   }
@@ -262,7 +262,7 @@ class ActivityDetailsScreen extends StatelessWidget {
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: color.withOpacity(0.3)),
+            border: Border.all(color: color.withValues(alpha: 0.3)),
           ),
           child: Row(
             children: [
@@ -274,7 +274,7 @@ class ActivityDetailsScreen extends StatelessWidget {
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
                 ),
               ),
-              Icon(Icons.chevron_right, color: color.withOpacity(0.5)),
+              Icon(Icons.chevron_right, color: color.withValues(alpha: 0.5)),
             ],
           ),
         ),

@@ -55,7 +55,7 @@ class _InterestQuickPickScreenState extends State<InterestQuickPickScreen> {
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.08),
+                color: Colors.black.withValues(alpha: 0.08),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),
@@ -180,7 +180,7 @@ class _InterestQuickPickScreenState extends State<InterestQuickPickScreen> {
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF6C47FF).withOpacity(0.3),
+              color: const Color(0xFF6C47FF).withValues(alpha: 0.3),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),

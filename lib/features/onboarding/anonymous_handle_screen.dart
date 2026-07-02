@@ -190,7 +190,7 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
                       ),
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        backgroundColor: const Color(0xFF6C47FF).withOpacity(0.08),
+                        backgroundColor: const Color(0xFF6C47FF).withValues(alpha: 0.08),
                         shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20)),
                       ),
@@ -259,7 +259,7 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
               color: isSelected
-                  ? const Color(0xFF6C47FF).withOpacity(0.1)
+                  ? const Color(0xFF6C47FF).withValues(alpha: 0.1)
                   : Colors.white,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
@@ -269,8 +269,8 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
               boxShadow: [
                 BoxShadow(
                   color: isSelected
-                      ? const Color(0xFF6C47FF).withOpacity(0.15)
-                      : Colors.black.withOpacity(0.04),
+                      ? const Color(0xFF6C47FF).withValues(alpha: 0.15)
+                      : Colors.black.withValues(alpha: 0.04),
                   blurRadius: isSelected ? 12 : 8,
                   offset: const Offset(0, 4),
                 ),
@@ -327,12 +327,12 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
             decoration: BoxDecoration(
               color: _showCustomInput
-                  ? const Color(0xFF6C47FF).withOpacity(0.06)
+                  ? const Color(0xFF6C47FF).withValues(alpha: 0.06)
                   : Colors.grey[100],
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: _showCustomInput
-                    ? const Color(0xFF6C47FF).withOpacity(0.3)
+                    ? const Color(0xFF6C47FF).withValues(alpha: 0.3)
                     : Colors.transparent,
               ),
             ),
@@ -341,7 +341,7 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF6C47FF).withOpacity(0.12),
+                    color: const Color(0xFF6C47FF).withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.edit_rounded,
@@ -400,7 +400,7 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -456,7 +456,7 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -521,7 +521,7 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF6C47FF).withOpacity(0.4),
+                color: const Color(0xFF6C47FF).withValues(alpha: 0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),

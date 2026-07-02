@@ -38,7 +38,7 @@ class HowChugLiWorksScreen extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
-                  BoxShadow(color: const Color(0xFF6C47FF).withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))
+                  BoxShadow(color: const Color(0xFF6C47FF).withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 8))
                 ],
               ),
               child: Row(
@@ -54,7 +54,7 @@ class HowChugLiWorksScreen extends StatelessWidget {
                         SizedBox(height: 16),
                         Text(
                           'No names.\nNo profiles.\nJust real conversations.',
-                          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14, fontWeight: FontWeight.w600, height: 1.4),
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 14, fontWeight: FontWeight.w600, height: 1.4),
                         ),
                       ],
                     ),
@@ -63,7 +63,7 @@ class HowChugLiWorksScreen extends StatelessWidget {
                   Container(
                     padding: EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.chat_bubble_outline_rounded, color: Colors.white, size: 48),
@@ -98,7 +98,7 @@ class HowChugLiWorksScreen extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Theme.of(context).cardColor,
                   borderRadius: BorderRadius.circular(24),
-                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
                 ),
                 child: Column(
                   children: [
@@ -148,7 +148,7 @@ class HowChugLiWorksScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(24),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
               ),
               child: Column(
                 children: [
@@ -170,9 +170,9 @@ class HowChugLiWorksScreen extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: const Color(0xFF6C47FF).withOpacity(0.1),
+                color: const Color(0xFF6C47FF).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0xFF6C47FF).withOpacity(0.3)),
+                border: Border.all(color: const Color(0xFF6C47FF).withValues(alpha: 0.3)),
               ),
               child: Center(
                 child: Text(
@@ -195,7 +195,7 @@ class HowChugLiWorksScreen extends StatelessWidget {
         Container(
           width: 48,
           height: 48,
-          decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
           child: Center(child: Icon(icon, color: color, size: 24)),
         ),
         SizedBox(width: 16),
@@ -231,14 +231,14 @@ class HowChugLiWorksScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             padding: EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, color: color, size: 24),
           ),
           const Spacer(),

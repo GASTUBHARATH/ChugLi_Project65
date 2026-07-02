@@ -165,7 +165,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                         "No phone number. No email.\nNo real name required.",
                         textAlign: TextAlign.center,
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           fontSize: 16,
                           fontWeight: FontWeight.normal,
                           height: 1.5,
@@ -285,7 +285,7 @@ class _LocationNetworkIllustrationState extends State<LocationNetworkIllustratio
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFF6B6B).withOpacity(0.2 * (1 - _mainController.value)),
+                      color: const Color(0xFFFF6B6B).withValues(alpha: 0.2 * (1 - _mainController.value)),
                       blurRadius: 50,
                       spreadRadius: 20,
                     ),
@@ -316,7 +316,7 @@ class _RadarBackgroundPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.05)
+      ..color = Colors.white.withValues(alpha: 0.05)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 
@@ -336,7 +336,7 @@ class _RadarBackgroundPainter extends CustomPainter {
 
     // Draw network lines
     final linePaint = Paint()
-      ..color = Colors.white.withOpacity(0.03)
+      ..color = Colors.white.withValues(alpha: 0.03)
       ..strokeWidth = 1;
 
     canvas.drawLine(center, Offset(center.dx - 100, center.dy - 60), linePaint);
@@ -374,13 +374,13 @@ class _RadarRing extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: const Color(0xFF6C47FF).withOpacity(0.3),
+                  color: const Color(0xFF6C47FF).withValues(alpha: 0.3),
                   width: 2,
                 ),
                 gradient: RadialGradient(
                    colors: [
-                     const Color(0xFF6C47FF).withOpacity(0.1),
-                     const Color(0xFF2196F3).withOpacity(0.05),
+                     const Color(0xFF6C47FF).withValues(alpha: 0.1),
+                     const Color(0xFF2196F3).withValues(alpha: 0.05),
                      Colors.transparent,
                    ],
                 )
@@ -414,7 +414,7 @@ class _MainPin extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.3),
+                  color: Colors.black.withValues(alpha: 0.3),
                   blurRadius: 10,
                   spreadRadius: 2,
                 ),
@@ -432,7 +432,7 @@ class _MainPin extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFFFF6B6B).withOpacity(0.5),
+                    color: const Color(0xFFFF6B6B).withValues(alpha: 0.5),
                     blurRadius: 20,
                     spreadRadius: 5,
                   ),
@@ -493,7 +493,7 @@ class _SmallNetworkPin extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: color.withOpacity(0.6),
+                    color: color.withValues(alpha: 0.6),
                     blurRadius: 12,
                     spreadRadius: 3,
                   ),
@@ -582,7 +582,7 @@ class _StartNearbyButtonState extends State<_StartNearbyButton>
             borderRadius: BorderRadius.circular(28),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFFFF6B6B).withOpacity(0.4),
+                color: const Color(0xFFFF6B6B).withValues(alpha: 0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 10),
               ),

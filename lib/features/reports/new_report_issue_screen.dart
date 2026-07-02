@@ -75,9 +75,9 @@ class _NewReportIssueScreenState extends State<NewReportIssueScreen> {
                 Container(
                   padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
+                    color: Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                    border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,14 +128,14 @@ class _NewReportIssueScreenState extends State<NewReportIssueScreen> {
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: const Color(0xFF6C47FF).withOpacity(0.3),
+                                    color: const Color(0xFF6C47FF).withValues(alpha: 0.3),
                                     blurRadius: 10,
                                     offset: const Offset(0, 4),
                                   )
                                 ]
                               : [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.03),
+                                    color: Colors.black.withValues(alpha: 0.03),
                                     blurRadius: 8,
                                     offset: const Offset(0, 2),
                                   )
@@ -178,7 +178,7 @@ class _NewReportIssueScreenState extends State<NewReportIssueScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     elevation: 5,
-                    shadowColor: const Color(0xFF6C47FF).withOpacity(0.5),
+                    shadowColor: const Color(0xFF6C47FF).withValues(alpha: 0.5),
                   ),
                   child: Text(
                     'Next',

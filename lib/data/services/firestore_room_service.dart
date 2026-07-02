@@ -220,6 +220,7 @@ class FirestoreRoomService {
     required String handle,
     required String text,
     String? tag,
+    Map<String, String>? replyTo, // {handle, text}
   }) async {
     final uid = _uid;
     final batch = _db.batch();
@@ -230,14 +231,17 @@ class FirestoreRoomService {
         .collection('messages')
         .doc();
 
-    batch.set(msgRef, {
+    final msgData = <String, dynamic>{
       'handle': handle,
       'text': text,
       'timestamp': Timestamp.now(),
       'tag': tag,
       'uid': uid,
       'reactions': <String>[],
-    });
+    };
+    if (replyTo != null) msgData['replyTo'] = replyTo;
+
+    batch.set(msgRef, msgData);
 
     final roomRef = _db.collection('rooms').doc(roomId);
     batch.update(roomRef, {
@@ -275,7 +279,135 @@ class FirestoreRoomService {
     });
   }
 
+  // ── Add per-user emoji reaction to a message ─────────────────────
+  // Uses a map: reactions_map: { 'emoji': ['uid1', 'uid2', ...], ... }
+  Future<void> addMessageReaction(
+      String roomId, String messageId, String emoji) async {
+    final uid = _uid;
+    final msgRef = _db
+        .collection('rooms')
+        .doc(roomId)
+        .collection('messages')
+        .doc(messageId);
+
+    // Read current map to see if this uid already reacted with this emoji
+    final doc = await msgRef.get();
+    final data = doc.data() ?? {};
+    final reactionMap =
+        Map<String, dynamic>.from(data['reactionsMap'] ?? {});
+    final uids = List<String>.from(reactionMap[emoji] ?? []);
+
+    if (uids.contains(uid)) {
+      // Toggle off
+      uids.remove(uid);
+    } else {
+      uids.add(uid);
+    }
+
+    if (uids.isEmpty) {
+      reactionMap.remove(emoji);
+    } else {
+      reactionMap[emoji] = uids;
+    }
+
+    await msgRef.update({'reactionsMap': reactionMap});
+  }
+
+  // ── Send a poll message ───────────────────────────────────────────
+  Future<void> sendPollMessage({
+    required String roomId,
+    required String handle,
+    required String question,
+    required List<String> options,
+  }) async {
+    final uid = _uid;
+    final batch = _db.batch();
+
+    final msgRef = _db
+        .collection('rooms')
+        .doc(roomId)
+        .collection('messages')
+        .doc();
+
+    batch.set(msgRef, {
+      'type': 'poll',
+      'handle': handle,
+      'question': question,
+      'options': options.map((o) => {'text': o, 'votes': <String>[]}).toList(),
+      'timestamp': Timestamp.now(),
+      'uid': uid,
+    });
+
+    final roomRef = _db.collection('rooms').doc(roomId);
+    batch.update(roomRef, {
+      'preview': '📊 $question',
+      'participantUids': FieldValue.arrayUnion([uid]),
+    });
+
+    await batch.commit();
+  }
+
+  // ── Vote on a poll option ─────────────────────────────────────────
+  Future<void> votePoll({
+    required String roomId,
+    required String messageId,
+    required int optionIndex,
+  }) async {
+    final uid = _uid;
+    final msgRef = _db
+        .collection('rooms')
+        .doc(roomId)
+        .collection('messages')
+        .doc(messageId);
+
+    final doc = await msgRef.get();
+    if (!doc.exists) return;
+
+    final data = doc.data()!;
+    final options = List<Map<String, dynamic>>.from(
+        (data['options'] as List).map((o) => Map<String, dynamic>.from(o)));
+
+    // Remove uid from all options first (one vote per user)
+    for (int i = 0; i < options.length; i++) {
+      final votes = List<String>.from(options[i]['votes'] ?? []);
+      votes.remove(uid);
+      options[i]['votes'] = votes;
+    }
+
+    // Add uid to the chosen option
+    final votes = List<String>.from(options[optionIndex]['votes'] ?? []);
+    if (!votes.contains(uid)) votes.add(uid);
+    options[optionIndex]['votes'] = votes;
+
+    await msgRef.update({'options': options});
+  }
+
+  // ── Pin a message (room creator only) ───────────────────────────
+  Future<void> pinMessage({
+    required String roomId,
+    required String messageId,
+    required String text,
+    required String handle,
+  }) async {
+    await _db.collection('rooms').doc(roomId).update({
+      'pinnedMessage': {
+        'id': messageId,
+        'text': text,
+        'handle': handle,
+        'pinnedAt': Timestamp.now(),
+      },
+    });
+  }
+
+  // ── Unpin the pinned message ──────────────────────────────────────
+  Future<void> unpinMessage(String roomId) async {
+    await _db.collection('rooms').doc(roomId).update({
+      'pinnedMessage': FieldValue.delete(),
+    });
+  }
+
   // ── End a room early (creator only) ─────────────────────────────
+
   Future<void> endRoom(String roomId) async {
     await _db.collection('rooms').doc(roomId).update({
       'expiresAt': Timestamp.now(),
@@ -287,10 +419,13 @@ class FirestoreRoomService {
     required String handle,
     List<String>? interests,
   }) async {
+    // 'createdAt' is written with merge:true, so Firestore only sets it
+    // the very first time (subsequent merges leave the existing value intact).
     await _db.collection('users').doc(_uid).set({
       'handle': handle,
       'interests': interests ?? [],
-      'updatedAt': Timestamp.now(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
 

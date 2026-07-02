@@ -96,12 +96,12 @@ class _BroadcastBannerWrapperState extends State<BroadcastBannerWrapper>
                     ),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: const Color(0xFF7B61FF).withOpacity(0.6),
+                      color: const Color(0xFF7B61FF).withValues(alpha: 0.6),
                       width: 1.5,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF7B61FF).withOpacity(0.3),
+                        color: const Color(0xFF7B61FF).withValues(alpha: 0.3),
                         blurRadius: 20,
                         spreadRadius: 2,
                       ),
@@ -114,7 +114,7 @@ class _BroadcastBannerWrapperState extends State<BroadcastBannerWrapper>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF7B61FF).withOpacity(0.15),
+                          color: const Color(0xFF7B61FF).withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
                         child: const Text('📣',
@@ -140,7 +140,7 @@ class _BroadcastBannerWrapperState extends State<BroadcastBannerWrapper>
                               Text(
                                 _bannerBody!,
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.75),
+                                  color: Colors.white.withValues(alpha: 0.75),
                                   fontSize: 12,
                                 ),
                                 maxLines: 2,
@@ -156,7 +156,7 @@ class _BroadcastBannerWrapperState extends State<BroadcastBannerWrapper>
                         child: Icon(
                           Icons.close,
                           size: 18,
-                          color: Colors.white.withOpacity(0.5),
+                          color: Colors.white.withValues(alpha: 0.5),
                         ),
                       ),
                     ],

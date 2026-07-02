@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -453,7 +454,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   }
 }
 
-class _RoomCard extends StatelessWidget {
+class _RoomCard extends StatefulWidget {
   final Map<String, dynamic> room;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
@@ -465,21 +466,45 @@ class _RoomCard extends StatelessWidget {
   });
 
   @override
+  State<_RoomCard> createState() => _RoomCardState();
+}
+
+class _RoomCardState extends State<_RoomCard> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    // Tick every second so the countdown stays live
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    bool isHighActivity = room['isHighActivity'] ?? false;
-    String category = room['category'] ?? 'Active';
-    
+    bool isHighActivity = widget.room['isHighActivity'] ?? false;
+    String category = widget.room['category'] ?? 'Active';
+
     // Calculate remaining time from absolute expiresAt
-    final DateTime expiresAt = room['expiresAt'] ?? DateTime.now().add(const Duration(hours: 2));
+    final DateTime expiresAt = widget.room['expiresAt'] ?? DateTime.now().add(const Duration(hours: 2));
     Duration remaining = expiresAt.difference(DateTime.now());
-    
+
     String remainingText;
     if (remaining.isNegative) {
       remainingText = 'Expired';
     } else if (remaining.inHours > 0) {
-      remainingText = '${remaining.inHours}h ${remaining.inMinutes.remainder(60)}m';
+      remainingText = '${remaining.inHours}h ${remaining.inMinutes.remainder(60)}m ${remaining.inSeconds.remainder(60)}s';
+    } else if (remaining.inMinutes > 0) {
+      remainingText = '${remaining.inMinutes}m ${remaining.inSeconds.remainder(60)}s';
     } else {
-      remainingText = '${remaining.inMinutes}m';
+      remainingText = '${remaining.inSeconds}s';
     }
 
     Color badgeColor;
@@ -494,8 +519,8 @@ class _RoomCard extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: onTap,
-      onLongPress: onLongPress,
+      onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
       child: Container(
         margin: const EdgeInsets.only(bottom: 20),
         padding: EdgeInsets.all(isHighActivity ? 24 : 16),
@@ -536,7 +561,7 @@ class _RoomCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              room['preview'] ?? '',
+              widget.room['preview'] ?? '',
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -547,7 +572,7 @@ class _RoomCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              room['title'] ?? '',
+              widget.room['title'] ?? '',
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -560,20 +585,41 @@ class _RoomCard extends StatelessWidget {
                 _buildLiveIndicator(),
                 const SizedBox(width: 12),
                 Text(
-                  "${room['participants'] ?? 0} Participants",
+                  "${widget.room['participants'] ?? 0} Participants",
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF4A4A4A)),
                 ),
                 const Spacer(),
-                Text(
-                  remainingText,
-                  style: TextStyle(color: remaining.isNegative ? Colors.red : Colors.grey, fontSize: 13, fontWeight: FontWeight.w600),
+                // ── Feature 2: Live countdown ──
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: Text(
+                    remainingText,
+                    key: ValueKey(remainingText),
+                    style: TextStyle(
+                      color: remaining.isNegative
+                          ? Colors.red
+                          : remaining.inMinutes < 5
+                              ? Colors.orange
+                              : Colors.grey,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 4),
-                const Icon(Icons.timer_outlined, size: 14, color: Colors.grey),
+                Icon(
+                  Icons.timer_outlined,
+                  size: 14,
+                  color: remaining.isNegative
+                      ? Colors.red
+                      : remaining.inMinutes < 5
+                          ? Colors.orange
+                          : Colors.grey,
+                ),
               ],
             ),
             const SizedBox(height: 16),
-            _buildReactionStack(context, List<String>.from(room['reactions'] ?? [])),
+            _buildReactionStack(context, List<String>.from(widget.room['reactions'] ?? [])),
           ],
         ),
       ),
@@ -639,3 +685,5 @@ class _RoomCard extends StatelessWidget {
     );
   }
 }
+
+

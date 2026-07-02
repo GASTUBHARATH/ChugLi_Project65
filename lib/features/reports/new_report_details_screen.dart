@@ -142,9 +142,9 @@ class _NewReportDetailsScreenState extends State<NewReportDetailsScreen> {
                         width: 80,
                         height: 80,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF6C47FF).withOpacity(0.1),
+                          color: const Color(0xFF6C47FF).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: const Color(0xFF6C47FF).withOpacity(0.3), width: 2, style: BorderStyle.solid),
+                          border: Border.all(color: const Color(0xFF6C47FF).withValues(alpha: 0.3), width: 2, style: BorderStyle.solid),
                         ),
                         child: Icon(Icons.add_photo_alternate_rounded, color: Color(0xFF6C47FF), size: 32),
                       ),
@@ -202,7 +202,7 @@ class _NewReportDetailsScreenState extends State<NewReportDetailsScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     elevation: 5,
-                    shadowColor: const Color(0xFF6C47FF).withOpacity(0.5),
+                    shadowColor: const Color(0xFF6C47FF).withValues(alpha: 0.5),
                   ),
                   child: Text(
                     'Submit Report',

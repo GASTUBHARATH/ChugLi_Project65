@@ -192,7 +192,7 @@ class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
                   decoration: BoxDecoration(
                     color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(24),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4))],
                   ),
                   child: Row(
                     children: [
@@ -200,7 +200,7 @@ class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
                         width: 64,
                         height: 64,
                         decoration: BoxDecoration(
-                          color: iconBgColor.withOpacity(0.1),
+                          color: iconBgColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Center(child: Text(emoji, style: TextStyle(fontSize: 32))),
@@ -222,7 +222,7 @@ class _RoomDetailsScreenState extends State<RoomDetailsScreen> {
                                 Container(
                                   padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: isExpired ? Colors.grey.withOpacity(0.1) : const Color(0xFF00C48C).withOpacity(0.1),
+                                    color: isExpired ? Colors.grey.withValues(alpha: 0.1) : const Color(0xFF00C48C).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(

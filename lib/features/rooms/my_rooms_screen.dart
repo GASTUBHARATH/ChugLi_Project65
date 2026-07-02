@@ -138,7 +138,7 @@ class _MyRoomsScreenState extends State<MyRoomsScreen> with SingleTickerProvider
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF6C47FF).withOpacity(0.3),
+            color: const Color(0xFF6C47FF).withValues(alpha: 0.3),
             blurRadius: 12,
             offset: const Offset(0, 6),
           )
@@ -176,7 +176,7 @@ class _MyRoomsScreenState extends State<MyRoomsScreen> with SingleTickerProvider
         SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.w500),
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12, fontWeight: FontWeight.w500),
         ),
       ],
     );
@@ -242,7 +242,7 @@ class _MyRoomsScreenState extends State<MyRoomsScreen> with SingleTickerProvider
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           )
@@ -257,7 +257,7 @@ class _MyRoomsScreenState extends State<MyRoomsScreen> with SingleTickerProvider
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: iconBgColor.withOpacity(0.1),
+                  color: iconBgColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Center(
@@ -286,7 +286,7 @@ class _MyRoomsScreenState extends State<MyRoomsScreen> with SingleTickerProvider
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: isExpired ? Colors.grey.withOpacity(0.1) : const Color(0xFF00C48C).withOpacity(0.1),
+                  color: isExpired ? Colors.grey.withValues(alpha: 0.1) : const Color(0xFF00C48C).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
