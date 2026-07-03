@@ -7,6 +7,7 @@ import 'package:chugli_project65/features/rooms/create_room_screen.dart';
 import 'package:chugli_project65/data/services/firestore_room_service.dart';
 import 'package:chugli_project65/data/services/location_service.dart';
 import 'package:chugli_project65/features/rooms/room_conversation_screen.dart';
+import 'package:chugli_project65/data/services/mute_service.dart';
 
 class HomeFeedScreen extends StatefulWidget {
   const HomeFeedScreen({super.key});
@@ -17,10 +18,12 @@ class HomeFeedScreen extends StatefulWidget {
 
 class _HomeFeedScreenState extends State<HomeFeedScreen> {
   String _selectedRadius = '0.5km';
-  String _selectedCategory = '🔥 Active';
+  String _selectedCategory = '🌟 All';
+  List<String> _mutedRoomIds = [];
 
   final List<String> _radiusOptions = ['0.5km', '1km', '2km', '5km'];
   final List<String> _categories = [
+    '🌟 All',
     '🔥 Active',
     '❓ Questions',
     '😂 Funny',
@@ -34,8 +37,14 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   @override
   void initState() {
     super.initState();
+    _loadMutedRooms();
     _loadRadius();
     _fetchLocation();
+  }
+
+  Future<void> _loadMutedRooms() async {
+    final ids = await MuteService.instance.getMutedRoomIds();
+    if (mounted) setState(() => _mutedRoomIds = ids);
   }
 
   Future<void> _fetchLocation() async {
@@ -73,6 +82,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
 
   Future<void> _handleRefresh() async {
     // Re-fetch GPS on pull-to-refresh
+    await _loadMutedRooms();
     await LocationService.instance.getCurrentLocation();
     if (mounted) {
       setState(() {}); // trigger rebuild to apply new GPS position to filter
@@ -82,7 +92,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     FirestoreRoomService.instance.syncUserLocationAndNotifications();
   }
 
-  void _showRoomOptions(BuildContext context) {
+  void _showRoomOptions(BuildContext context, Map<String, dynamic> room) {
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -107,7 +117,20 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             ListTile(
               leading: const Icon(Icons.volume_off_outlined),
               title: const Text('Mute User Locally'),
-              onTap: () => Navigator.pop(context),
+              onTap: () async {
+                Navigator.pop(context);
+                await MuteService.instance.muteRoom(
+                  id: room['id'] ?? '',
+                  title: room['title'] ?? room['preview'] ?? 'Unknown Room',
+                  category: room['category'] ?? 'Active',
+                );
+                await _loadMutedRooms();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Room muted successfully.')),
+                  );
+                }
+              },
             ),
             const SizedBox(height: 12),
           ],
@@ -295,7 +318,9 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 final isSelected = _selectedCategory == category;
                 
                 Color color;
-                if (category.contains('Active')) {
+                if (category.contains('All')) {
+                  color = const Color(0xFF6C47FF);
+                } else if (category.contains('Active')) {
                   color = const Color(0xFFFF7A59);
                 } else if (category.contains('Questions')) {
                   color = const Color(0xFF5B8CFF);
@@ -389,12 +414,13 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           }
 
           final rooms = snapshot.data ?? [];
+          final nonMutedRooms = rooms.where((room) => !_mutedRoomIds.contains(room['id'])).toList();
           final double maxRadius =
               double.tryParse(_selectedRadius.replaceAll('km', '')) ?? 0.5;
           final userPos = LocationService.instance.lastPosition;
 
           // Filter by GPS radius with safe type casting
-          final filtered = rooms.where((room) {
+          final radiusFiltered = nonMutedRooms.where((room) {
             final lat = (room['latitude'] as num?)?.toDouble();
             final lon = (room['longitude'] as num?)?.toDouble();
             if (userPos == null || lat == null || lon == null) return true;
@@ -403,7 +429,40 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                 maxRadius;
           }).toList();
 
+          // Filter by category
+          final filtered = radiusFiltered.where((room) {
+            if (_selectedCategory.contains('All')) return true;
+            
+            final roomCategory = room['category'] ?? 'Active';
+            
+            // Handle plural matches from home categories to singular saved room categories
+            if (roomCategory == 'Question' && _selectedCategory.contains('Questions')) return true;
+            if (roomCategory == 'Confession' && _selectedCategory.contains('Confessions')) return true;
+            
+            return _selectedCategory.contains(roomCategory);
+          }).toList();
+
           if (filtered.isEmpty) {
+            if (radiusFiltered.isNotEmpty) {
+              return const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 80),
+                  child: Center(
+                    child: Column(
+                      children: [
+                        Text('📂', style: TextStyle(fontSize: 48)),
+                        SizedBox(height: 16),
+                        Text('No rooms available in this category.',
+                            style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black54)),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
             return const SliverToBoxAdapter(
               child: Padding(
                 padding: EdgeInsets.only(top: 80),
@@ -442,7 +501,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                       ),
                     );
                   },
-                  onLongPress: () => _showRoomOptions(context),
+                  onLongPress: () => _showRoomOptions(context, room),
                 );
               },
               childCount: filtered.length,

@@ -7,6 +7,7 @@ import 'package:chugli_project65/features/profile/change_handle_screen.dart';
 import 'package:chugli_project65/features/profile/interests_screen.dart';
 import 'package:chugli_project65/features/notifications/notifications_screen.dart';
 import 'package:chugli_project65/features/settings/language_screen.dart';
+import 'package:chugli_project65/features/settings/muted_rooms_screen.dart';
 import 'package:chugli_project65/features/info/help_support_screen.dart';
 import 'package:chugli_project65/features/info/about_chugli_screen.dart';
 import 'package:chugli_project65/features/onboarding/welcome_screen.dart';
@@ -227,6 +228,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       // 3. Delete Firebase Auth account
       await user.delete();
 
+      // 4. Ensure a new anonymous session is established
+      await FirestoreRoomService.instance.ensureSignedIn();
+
       if (mounted) {
         // Dismiss loading
         Navigator.pop(context);
@@ -403,7 +407,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               _buildSectionTitle("Privacy Control"),
               _buildSettingsCard(context, children: [
-                  _buildActionTile("Muted Rooms", Icons.volume_off_outlined, onTap: _showEmptyMutedBlocked),
+                  _buildActionTile("Muted Rooms", Icons.volume_off_outlined, onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const MutedRoomsScreen()));
+                  }),
                   _buildDivider(),
                   _buildActionTile("Blocked Users", Icons.block, onTap: _showEmptyMutedBlocked),
                 ],
@@ -423,22 +429,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               SizedBox(height: 32),
 
-              Center(
-                child: TextButton.icon(
-                  onPressed: _logout,
-                  icon: Icon(Icons.logout_rounded, color: Colors.redAccent),
-                  label: Text(
-                    "Log Out",
-                    style: TextStyle(color: Colors.redAccent, fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  ),
-                ),
-              ),
-              SizedBox(height: 16),
+
               Center(
                 child: TextButton.icon(
                   onPressed: _deleteAccount,

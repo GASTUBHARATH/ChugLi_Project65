@@ -149,13 +149,6 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
                     icon: "⚙️",
                     title: "Settings",
                   ),
-                  _buildDrawerItem(
-                    index: 10,
-                    icon: "🗑️",
-                    title: "Delete Account",
-                    subtitle: "Permanently delete your account",
-                    isDestructive: true,
-                  ),
                 ],
               ),
             ),
@@ -213,9 +206,6 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySafetyScreen()));
           } else if (index == 9) {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const SettingsScreen()));
-          } else if (index == 10) {
-            // Delete Account from drawer
-            _showDeleteAccountDialog();
           }
         },
         borderRadius: BorderRadius.circular(20),
@@ -341,6 +331,9 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
       await prefs.clear();
 
       await user.delete();
+
+      // Ensure a new anonymous session is established
+      await FirestoreRoomService.instance.ensureSignedIn();
 
       if (mounted) {
         Navigator.pop(context); // Dismiss loading

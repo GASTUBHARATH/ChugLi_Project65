@@ -92,6 +92,17 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
         await FirestoreRoomService.instance.saveUserProfile(handle: handle);
       } catch (e) {
         debugPrint('Error saving handle to Firestore: $e');
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to save profile: ${e.toString()}'),
+              backgroundColor: Colors.redAccent,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
       }
 
       if (!mounted) return;
