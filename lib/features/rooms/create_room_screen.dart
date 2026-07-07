@@ -13,11 +13,10 @@ class CreateRoomScreen extends StatefulWidget {
 class _CreateRoomScreenState extends State<CreateRoomScreen> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _customCategoryController = TextEditingController();
 
   String? _selectedCategory;
   String _selectedExpiry = '2h';
-  String _selectedParticipants = '50';
-  String _selectedVisibility = 'Public';
   bool _isCreating = false; // loading state
 
   final List<Map<String, String>> _categories = [
@@ -28,16 +27,16 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
     {'emoji': '🍕', 'label': 'Food'},
     {'emoji': '🤝', 'label': 'Networking'},
     {'emoji': '🎓', 'label': 'College'},
+    {'emoji': '📂', 'label': 'Others'},
   ];
 
-  final List<String> _expiryOptions = ['30m', '2h', '6h', '24h'];
-  final List<String> _participantOptions = ['5', '20', '50', '100', 'Unlimited'];
-  final List<String> _visibilityOptions = ['Public', 'Invite Only'];
+  final List<String> _expiryOptions = ['30m', '2h', '4h'];
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _customCategoryController.dispose();
     super.dispose();
   }
 
@@ -54,6 +53,12 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       );
       return;
     }
+    if (_selectedCategory == 'Others' && _customCategoryController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Custom category is required'), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
 
     setState(() => _isCreating = true);
 
@@ -61,20 +66,21 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
       Duration expiryDuration;
       switch (_selectedExpiry) {
         case '30m': expiryDuration = const Duration(minutes: 30); break;
-        case '6h':  expiryDuration = const Duration(hours: 6);    break;
-        case '24h': expiryDuration = const Duration(hours: 24);   break;
+        case '4h':  expiryDuration = const Duration(hours: 4);    break;
         default:    expiryDuration = const Duration(hours: 2);    break;
       }
 
       final pos = LocationService.instance.lastPosition;
 
+      final categoryToSave = _selectedCategory == 'Others'
+          ? _customCategoryController.text.trim()
+          : _selectedCategory!;
+
       await FirestoreRoomService.instance.createRoom(
         title: _titleController.text.trim(),
-        category: _selectedCategory!,
+        category: categoryToSave,
         description: _descriptionController.text.trim(),
         expiryDuration: expiryDuration,
-        maxParticipants: _selectedParticipants,
-        visibility: _selectedVisibility,
         latitude: pos?.latitude,
         longitude: pos?.longitude,
       );
@@ -176,7 +182,12 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                 return GestureDetector(
                   onTap: () {
                     HapticFeedback.selectionClick();
-                    setState(() => _selectedCategory = cat['label']);
+                    setState(() {
+                      _selectedCategory = cat['label'];
+                      if (cat['label'] != 'Others') {
+                        _customCategoryController.clear();
+                      }
+                    });
                   },
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
@@ -224,6 +235,30 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                 );
               },
             ),
+            // Custom Category Text Field (visible when Others is selected)
+            if (_selectedCategory == 'Others') ...[
+              SizedBox(height: 16),
+              TextField(
+                controller: _customCategoryController,
+                maxLength: 30,
+                decoration: InputDecoration(
+                  hintText: 'Enter Custom Category',
+                  hintStyle: TextStyle(color: Colors.black38),
+                  filled: true,
+                  fillColor: Colors.white,
+                  counterStyle: TextStyle(color: Colors.black54),
+                  prefixIcon: Icon(Icons.edit_outlined, color: const Color(0xFF6C47FF)),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 16,
+                  ),
+                ),
+              ),
+            ],
             SizedBox(height: 28),
 
             // Optional Description
@@ -299,108 +334,6 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
                       padding: EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 12,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            SizedBox(height: 28),
-
-            // Max Participants
-            Text(
-              'Max Participants',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            ),
-            SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: _participantOptions.map((opt) {
-                final isSelected = _selectedParticipants == opt;
-                return ChoiceChip(
-                  label: Text(opt),
-                  selected: isSelected,
-                  onSelected: (val) {
-                    if (val) {
-                      HapticFeedback.selectionClick();
-                      setState(() => _selectedParticipants = opt);
-                    }
-                  },
-                  selectedColor: const Color(0xFF6C47FF),
-                  backgroundColor: Colors.white,
-                  labelStyle: TextStyle(
-                    color: isSelected ? Colors.white : Colors.black87,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                    side: const BorderSide(color: Colors.transparent),
-                  ),
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 12,
-                  ),
-                );
-              }).toList(),
-            ),
-            SizedBox(height: 28),
-
-            // Visibility
-            Text(
-              'Visibility',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            ),
-            SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(30),
-              ),
-              padding: EdgeInsets.all(4),
-              child: Row(
-                children: _visibilityOptions.map((opt) {
-                  final isSelected = _selectedVisibility == opt;
-                  return Expanded(
-                    child: GestureDetector(
-                      onTap: () {
-                        HapticFeedback.selectionClick();
-                        setState(() => _selectedVisibility = opt);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        padding: EdgeInsets.symmetric(vertical: 14),
-                        decoration: BoxDecoration(
-                          color: isSelected ? Colors.white : Colors.transparent,
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: Colors.black.withValues(alpha: 0.1),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  )
-                                ]
-                              : [],
-                        ),
-                        child: Text(
-                          opt,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: isSelected ? Colors.black87 : Colors.black54,
-                            fontWeight:
-                                isSelected ? FontWeight.bold : FontWeight.w600,
-                            fontSize: 15,
-                          ),
-                        ),
                       ),
                     ),
                   );

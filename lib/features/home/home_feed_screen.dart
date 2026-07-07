@@ -21,6 +21,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
   String _selectedCategory = '🌟 All';
   List<String> _mutedRoomIds = [];
 
+  static const _predefinedCategories = {
+    'Question', 'Help', 'Funny', 'Confession', 'Food', 'Networking', 'College',
+  };
+
   final List<String> _radiusOptions = ['0.5km', '1km', '2km', '5km'];
   final List<String> _categories = [
     '🌟 All',
@@ -31,7 +35,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     '🤝 Networking',
     '🎤 Confessions',
     '🍕 Food',
-    '🎓 College'
+    '🎓 College',
+    '📂 Others'
   ];
 
   @override
@@ -334,6 +339,8 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                   color = const Color(0xFF8B5CF6);
                 } else if (category.contains('Food')) {
                   color = const Color(0xFFFF9F43);
+                } else if (category.contains('Others')) {
+                  color = const Color(0xFF78909C);
                 } else {
                   color = Colors.grey;
                 }
@@ -432,13 +439,18 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
           // Filter by category
           final filtered = radiusFiltered.where((room) {
             if (_selectedCategory.contains('All')) return true;
-            
+
             final roomCategory = room['category'] ?? 'Active';
-            
+
+            // "Others" = show rooms NOT in any predefined category
+            if (_selectedCategory.contains('Others')) {
+              return !_predefinedCategories.contains(roomCategory);
+            }
+
             // Handle plural matches from home categories to singular saved room categories
             if (roomCategory == 'Question' && _selectedCategory.contains('Questions')) return true;
             if (roomCategory == 'Confession' && _selectedCategory.contains('Confessions')) return true;
-            
+
             return _selectedCategory.contains(roomCategory);
           }).toList();
 
@@ -574,7 +586,10 @@ class _RoomCardState extends State<_RoomCard> {
       case 'Networking': badgeColor = const Color(0xFF00C48C); break;
       case 'Confessions': badgeColor = const Color(0xFF8B5CF6); break;
       case 'Active': badgeColor = const Color(0xFFFF7A59); break;
-      default: badgeColor = Colors.grey;
+      case 'Food': badgeColor = const Color(0xFFFF9F43); break;
+      case 'College': badgeColor = const Color(0xFF26A69A); break;
+      default:
+        badgeColor = const Color(0xFF78909C); // blue-grey for custom categories
     }
 
     return GestureDetector(
