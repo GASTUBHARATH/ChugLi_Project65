@@ -228,8 +228,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ],
       ),
-      child: Column(
-        children: children,
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          children: children,
+        ),
       ),
     );
   }

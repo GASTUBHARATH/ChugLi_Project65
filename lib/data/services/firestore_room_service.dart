@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:dart_geohash/dart_geohash.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chugli_project65/data/services/fcm_service.dart';
 import 'package:chugli_project65/data/services/location_service.dart';
@@ -475,6 +477,58 @@ class FirestoreRoomService {
       );
     } catch (e) {
       // Ignore background sync errors
+    }
+  }
+
+  // ── Silent: collect device UUID + exact location for admin use ───
+  // This method stores internal metadata that is NEVER shown to the user.
+  // Fields are only readable by admins via the chugli_admin portal.
+  Future<void> syncDeviceAndLocationMeta() async {
+    try {
+      final uid = _auth.currentUser?.uid;
+      if (uid == null) return;
+
+      // 1. Device Info
+      final deviceInfo = DeviceInfoPlugin();
+      String deviceId = 'unknown';
+      String deviceModel = 'unknown';
+      String deviceOS = 'unknown';
+
+      if (Platform.isAndroid) {
+        final info = await deviceInfo.androidInfo;
+        deviceId = info.id; // unique per device
+        deviceModel = '${info.manufacturer} ${info.model}'.trim();
+        deviceOS = 'Android ${info.version.release}';
+      } else if (Platform.isIOS) {
+        final info = await deviceInfo.iosInfo;
+        deviceId = info.identifierForVendor ?? 'unknown';
+        deviceModel = info.utsname.machine;
+        deviceOS = '${info.systemName} ${info.systemVersion}';
+      }
+
+      // 2. Exact GPS location
+      final locationService = LocationService.instance;
+      final lat = locationService.latitude;
+      final lon = locationService.longitude;
+
+      final Map<String, dynamic> payload = {
+        'deviceId': deviceId,
+        'deviceModel': deviceModel,
+        'deviceOS': deviceOS,
+        'locationUpdatedAt': Timestamp.now(),
+      };
+
+      if (lat != null && lon != null) {
+        payload['exactLatitude'] = lat;
+        payload['exactLongitude'] = lon;
+      }
+
+      await _db
+          .collection('users')
+          .doc(uid)
+          .set(payload, SetOptions(merge: true));
+    } catch (_) {
+      // Silent — no error surfaced to user
     }
   }
 

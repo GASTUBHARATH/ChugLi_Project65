@@ -6,7 +6,7 @@ import 'package:chugli_project65/core/utils/handle_generator.dart';
 import 'package:chugli_project65/features/profile/change_handle_screen.dart';
 import 'package:chugli_project65/features/profile/interests_screen.dart';
 import 'package:chugli_project65/features/notifications/notifications_screen.dart';
-import 'package:chugli_project65/features/settings/language_screen.dart';
+
 import 'package:chugli_project65/features/settings/muted_rooms_screen.dart';
 import 'package:chugli_project65/features/info/help_support_screen.dart';
 import 'package:chugli_project65/features/info/about_chugli_screen.dart';
@@ -130,41 +130,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       );
     }
   }
-  void _logout() {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Log Out', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to log out?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await FirebaseAuth.instance.signOut();
-              if (mounted) {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-                  (route) => false,
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text('Log Out', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-
   void _deleteAccount() {
     showDialog(
       context: context,
@@ -393,10 +358,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   _buildActionTile("Notifications", Icons.notifications_none_rounded, onTap: () {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
                   }),
-                  _buildDivider(),
-                  _buildActionTile("Language", Icons.language_rounded, onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageScreen()));
-                  }),
+
                   _buildDivider(),
                   _buildSwitchTile("Dark Mode", Icons.dark_mode_outlined, globalThemeProvider.isDarkMode, (val) {
                     globalThemeProvider.toggleTheme(val);
@@ -480,8 +442,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
-      child: Column(
-        children: children,
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          children: children,
+        ),
       ),
     );
   }

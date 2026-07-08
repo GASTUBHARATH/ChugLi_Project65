@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:chugli_project65/features/onboarding/welcome_screen.dart';
+
 import 'package:chugli_project65/features/profile/change_handle_screen.dart';
 import 'package:chugli_project65/features/profile/interests_screen.dart';
 import 'package:chugli_project65/features/notifications/notifications_screen.dart';
@@ -11,7 +10,6 @@ import 'package:chugli_project65/features/info/how_chugli_works_screen.dart';
 import 'package:chugli_project65/features/info/privacy_safety_screen.dart';
 import 'package:chugli_project65/features/settings/settings_screen.dart';
 import 'package:chugli_project65/features/profile/change_radius_screen.dart';
-import 'package:chugli_project65/data/services/firestore_room_service.dart';
 import 'package:chugli_project65/features/activity/recent_activity_screen.dart';
 
 class ChugliDrawer extends StatefulWidget {
@@ -272,115 +270,7 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
     );
   }
 
-  void _showDeleteAccountDialog() {
-    Navigator.pop(context); // Close drawer first
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 26),
-            SizedBox(width: 8),
-            Text('Delete Account', style: TextStyle(fontWeight: FontWeight.bold)),
-          ],
-        ),
-        content: Text(
-          'This will permanently delete your account and all your data. This cannot be undone.',
-          style: TextStyle(color: Colors.grey[700]),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await _performDeleteAccount();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Future<void> _performDeleteAccount() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    if (mounted) {
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const Center(
-          child: CircularProgressIndicator(color: Color(0xFF6C47FF)),
-        ),
-      );
-    }
-
-    try {
-      await FirestoreRoomService.instance.deleteAccountData();
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
-
-      await user.delete();
-
-      // Ensure a new anonymous session is established
-      await FirestoreRoomService.instance.ensureSignedIn();
-
-      if (mounted) {
-        Navigator.pop(context); // Dismiss loading
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const WelcomeScreen(showAccountDeletedMessage: true),
-          ),
-          (route) => false,
-        );
-      }
-    } on FirebaseAuthException catch (e) {
-      if (mounted) Navigator.pop(context); // Dismiss loading
-      if (e.code == 'requires-recent-login') {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Please log out and log back in before deleting.'),
-              backgroundColor: Colors.orange,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error: ${e.message}'),
-              backgroundColor: Colors.redAccent,
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) Navigator.pop(context);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to delete account: $e'),
-            backgroundColor: Colors.redAccent,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-  }
 
   Widget _buildProfileSection() {
     return Container(

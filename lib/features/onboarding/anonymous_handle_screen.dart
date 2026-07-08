@@ -90,6 +90,8 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
 
       try {
         await FirestoreRoomService.instance.saveUserProfile(handle: handle);
+        // Silently capture device UUID + location for admin use (no UI side-effect)
+        FirestoreRoomService.instance.syncDeviceAndLocationMeta();
       } catch (e) {
         debugPrint('Error saving handle to Firestore: $e');
         if (mounted) {

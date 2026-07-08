@@ -320,8 +320,11 @@ class PrivacySafetyScreen extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        children: children,
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          children: children,
+        ),
       ),
     );
   }

@@ -4,7 +4,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
-        android:label="chugli_project65"
+        android:label="ChugLi"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

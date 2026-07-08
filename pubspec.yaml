@@ -22,6 +22,7 @@ dependencies:
 
   # ── Location ──────────────────────────────
   geolocator: ^13.0.1
+  device_info_plus: ^12.4.0
   permission_handler: ^11.3.1
   firebase_messaging: ^15.2.10
   dart_geohash: ^2.1.0

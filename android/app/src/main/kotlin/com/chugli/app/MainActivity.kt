@@ -1,4 +1,4 @@
-package com.example.chugli_project65
+package com.chugli.app
 
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity

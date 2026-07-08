@@ -7,6 +7,44 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:345905234462:android:6430d22aef3ccede62240f",
+        "android_client_info": {
+          "package_name": "com.chugli.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVM3gIp4zOZgXxjDXq9x5I1SfhwwtLtb8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:345905234462:android:5d0b17a900d8dd3d62240f",
+        "android_client_info": {
+          "package_name": "com.example.chugli_admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVM3gIp4zOZgXxjDXq9x5I1SfhwwtLtb8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:345905234462:android:c6a0766eb363482962240f",
         "android_client_info": {
           "package_name": "com.example.chugli_project65"
