@@ -193,7 +193,7 @@ class FirestoreRoomService {
       'joinedUsers': [uid],
       'maxParticipants': 'Unlimited',
       'visibility': 'Public',
-      'createdAt': Timestamp.fromDate(now),
+      'createdAt': FieldValue.serverTimestamp(),
       'expiresAt': Timestamp.fromDate(now.add(expiryDuration)),
       'isHighActivity': false,
       'createdBy': uid,

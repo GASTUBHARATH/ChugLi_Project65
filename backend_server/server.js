@@ -45,15 +45,48 @@ function haversineKm(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Keep track of the start time so we don't process old rooms on startup
-const START_TIME = admin.firestore.Timestamp.now();
+// Helper to clean up stale tokens safely (Firestore limits array-contains-any to 10 elements)
+async function cleanUpStaleTokens(staleTokens) {
+  if (staleTokens.length === 0) return;
+
+  const chunkedTokens = [];
+  for (let i = 0; i < staleTokens.length; i += 10) {
+    chunkedTokens.push(staleTokens.slice(i, i + 10));
+  }
+
+  for (const chunk of chunkedTokens) {
+    const usersWithStale = await db.collection("users").where("fcmTokens", "array-contains-any", chunk).get();
+    if (usersWithStale.empty) continue;
+
+    const batch = db.batch();
+    for (const doc of usersWithStale.docs) {
+      const tokens = doc.data().fcmTokens ?? [];
+      const cleaned = tokens.filter((t) => !staleTokens.includes(t));
+      batch.update(doc.ref, { fcmTokens: cleaned });
+    }
+    await batch.commit();
+  }
+  console.log(`🧹 Removed ${staleTokens.length} stale tokens.`);
+}
+
+// Keep track of the start time (minus 5 minutes for clock skew)
+// This prevents reading the entire database on startup while avoiding missed events.
+const startTimeMillis = Date.now() - 5 * 60 * 1000;
+const START_TIME = admin.firestore.Timestamp.fromMillis(startTimeMillis);
 
 console.log("🎧 Listening for new rooms...");
+
+let isRoomsInitialLoad = true;
 
 // Set up a real-time listener on the 'rooms' collection
 db.collection("rooms")
   .where("createdAt", ">", START_TIME)
   .onSnapshot(async (snapshot) => {
+    if (isRoomsInitialLoad) {
+      isRoomsInitialLoad = false;
+      return;
+    }
+
     snapshot.docChanges().forEach(async (change) => {
       // We only care about newly created rooms
       if (change.type === "added") {
@@ -132,66 +165,69 @@ async function processNewRoom(roomId, room) {
   console.log(`Sending notifications to ${tokensToSend.length} device(s)...`);
 
   const emoji = CATEGORY_EMOJI[roomCategory] ?? "💬";
-  const message = {
-    notification: {
-      title: `${emoji} New room nearby!`,
-      body: `"${roomTitle}" just opened in your area. Tap to join!`,
-    },
-    data: {
-      type: "new_room",
-      roomId: roomId,
-      roomTitle: roomTitle,
-      roomCategory: roomCategory,
-    },
-    android: {
-      priority: "high",
+  
+  // FCM allows max 500 tokens per multicast — batch them
+  const BATCH_SIZE = 500;
+  let totalSent = 0;
+  let totalFailed = 0;
+
+  for (let i = 0; i < tokensToSend.length; i += BATCH_SIZE) {
+    const batch = tokensToSend.slice(i, i + BATCH_SIZE);
+
+    const message = {
       notification: {
-        channelId: "nearby_rooms",
-        priority: "high",
-        defaultSound: true,
-        clickAction: "FLUTTER_NOTIFICATION_CLICK",
+        title: `${emoji} New room nearby!`,
+        body: `"${roomTitle}" just opened in your area. Tap to join!`,
       },
-    },
-    apns: {
-      payload: {
-        aps: {
-          sound: "default",
-          badge: 1,
+      data: {
+        type: "new_room",
+        roomId: roomId,
+        roomTitle: roomTitle,
+        roomCategory: roomCategory,
+      },
+      android: {
+        priority: "high",
+        notification: {
+          channelId: "nearby_rooms",
+          priority: "high",
+          defaultSound: true,
+          clickAction: "FLUTTER_NOTIFICATION_CLICK",
         },
       },
-    },
-    tokens: tokensToSend,
-  };
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+            badge: 1,
+          },
+        },
+      },
+      tokens: batch,
+    };
 
-  try {
-    const response = await getMessaging().sendEachForMulticast(message);
-    console.log(`FCM result: ${response.successCount} sent, ${response.failureCount} failed.`);
+    try {
+      const response = await getMessaging().sendEachForMulticast(message);
+      totalSent += response.successCount;
+      totalFailed += response.failureCount;
 
-    // Clean up stale tokens
-    const staleTokens = [];
-    response.responses.forEach((resp, idx) => {
-      if (!resp.success) {
-        const code = resp.error?.code ?? "";
-        if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
-          staleTokens.push(tokensToSend[idx]);
+      // Clean up stale tokens
+      const staleTokens = [];
+      response.responses.forEach((resp, idx) => {
+        if (!resp.success) {
+          const code = resp.error?.code ?? "";
+          if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
+            staleTokens.push(batch[idx]);
+          }
         }
-      }
-    });
+      });
 
-    if (staleTokens.length > 0) {
-      const usersWithStale = await db.collection("users").where("fcmTokens", "array-contains-any", staleTokens).get();
-      const batch = db.batch();
-      for (const doc of usersWithStale.docs) {
-        const tokens = doc.data().fcmTokens ?? [];
-        const cleaned = tokens.filter((t) => !staleTokens.includes(t));
-        batch.update(doc.ref, { fcmTokens: cleaned });
-      }
-      await batch.commit();
-      console.log(`Removed ${staleTokens.length} stale tokens.`);
+      await cleanUpStaleTokens(staleTokens);
+    } catch (err) {
+      console.error("❌ FCM send failed for batch:", err);
     }
-  } catch (err) {
-    console.error("FCM send failed:", err);
   }
+
+  console.log(`✅ FCM result: ${totalSent} sent, ${totalFailed} failed.`);
 }
 
 // Keep the Node.js process alive and satisfy Render's port binding requirement
@@ -212,13 +248,21 @@ server.listen(PORT, () => {
 // When a new broadcast is detected, it sends an FCM push notification to ALL
 // users who have an fcmToken stored in their Firestore user document.
 
-const BROADCAST_START_TIME = admin.firestore.Timestamp.now();
+const broadcastStartTimeMillis = Date.now() - 5 * 60 * 1000;
+const BROADCAST_START_TIME = admin.firestore.Timestamp.fromMillis(broadcastStartTimeMillis);
 
 console.log("📣 Listening for new broadcasts...");
+
+let isBroadcastsInitialLoad = true;
 
 db.collection("broadcasts")
   .where("createdAt", ">", BROADCAST_START_TIME)
   .onSnapshot(async (snapshot) => {
+    if (isBroadcastsInitialLoad) {
+      isBroadcastsInitialLoad = false;
+      return;
+    }
+
     snapshot.docChanges().forEach(async (change) => {
       if (change.type === "added") {
         const broadcast = change.doc.data();
@@ -314,18 +358,7 @@ async function processBroadcast(broadcastId, broadcast) {
       });
 
       if (staleTokens.length > 0) {
-        const usersWithStale = await db
-          .collection("users")
-          .where("fcmTokens", "array-contains-any", staleTokens)
-          .get();
-        const cleanupBatch = db.batch();
-        for (const doc of usersWithStale.docs) {
-          const tokens = doc.data().fcmTokens ?? [];
-          const cleaned = tokens.filter((t) => !staleTokens.includes(t));
-          cleanupBatch.update(doc.ref, { fcmTokens: cleaned });
-        }
-        await cleanupBatch.commit();
-        console.log(`🧹 Removed ${staleTokens.length} stale tokens.`);
+        await cleanUpStaleTokens(staleTokens);
       }
     } catch (err) {
       console.error("❌ FCM broadcast send failed:", err);
