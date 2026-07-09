@@ -367,17 +367,19 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
           ),
           content: SizedBox(
             width: double.maxFinite,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: reasons.map((reason) => RadioListTile<String>(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                title: Text(reason, style: const TextStyle(fontSize: 14)),
-                value: reason,
-                groupValue: selectedReason,
-                activeColor: const Color(0xFF6C47FF),
-                onChanged: (val) => setDialogState(() => selectedReason = val),
-              )).toList(),
+            child: RadioGroup<String>(
+              groupValue: selectedReason ?? '',
+              onChanged: (val) => setDialogState(() => selectedReason = val),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: reasons.map((reason) => RadioListTile<String>(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(reason, style: const TextStyle(fontSize: 14)),
+                  value: reason,
+                  activeColor: const Color(0xFF6C47FF),
+                )).toList(),
+              ),
             ),
           ),
           actions: [
