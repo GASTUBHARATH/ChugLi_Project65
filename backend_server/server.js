@@ -128,6 +128,20 @@ async function processNewRoom(roomId, room) {
 
   const snapshots = await Promise.all(promises);
 
+  const creatorTokens = new Set();
+  if (creatorUid) {
+    try {
+      const creatorDoc = await db.collection("users").doc(creatorUid).get();
+      if (creatorDoc.exists) {
+        for (const t of (creatorDoc.data().fcmTokens ?? [])) {
+          creatorTokens.add(t);
+        }
+      }
+    } catch (e) {
+      console.error("Error fetching creator tokens:", e);
+    }
+  }
+
   const seenUids = new Set();
   const tokensToSend = [];
 
@@ -150,7 +164,7 @@ async function processNewRoom(roomId, room) {
       if (distKm > radiusPref) continue;
 
       for (const token of fcmTokens) {
-        if (token && typeof token === "string") {
+        if (token && typeof token === "string" && !creatorTokens.has(token)) {
           tokensToSend.push(token);
         }
       }
