@@ -453,11 +453,21 @@ class FirestoreRoomService {
 
   Future<void> syncUserLocationAndNotifications() async {
     try {
+      final fcmToken = await FCMService.instance.getToken();
       final locationService = LocationService.instance;
       final lat = locationService.latitude;
       final lon = locationService.longitude;
 
-      if (lat == null || lon == null) return;
+      if (lat == null || lon == null) {
+        // If GPS fails, still save the FCM token so the user can receive broadcasts.
+        if (fcmToken != null) {
+          await _db.collection('users').doc(_uid).set({
+            'fcmTokens': FieldValue.arrayUnion([fcmToken]),
+            'updatedAt': Timestamp.now(),
+          }, SetOptions(merge: true));
+        }
+        return;
+      }
 
       final prefs = await SharedPreferences.getInstance();
       String radiusStr = prefs.getString('selected_radius') ?? '0.5 km';
@@ -465,8 +475,6 @@ class FirestoreRoomService {
 
       final hasher = GeoHasher();
       final geohash = hasher.encode(lon, lat);
-
-      final fcmToken = await FCMService.instance.getToken();
 
       await syncUserLocationData(
         latitude: lat,

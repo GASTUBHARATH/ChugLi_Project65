@@ -321,7 +321,7 @@ async function processBroadcast(broadcastId, broadcast) {
       android: {
         priority: "high",
         notification: {
-          channelId: "nearby_rooms",
+          channelId: "broadcasts",
           priority: "high",
           defaultSound: true,
           clickAction: "FLUTTER_NOTIFICATION_CLICK",
