@@ -43,7 +43,7 @@ class ReportSubmittedScreen extends StatelessWidget {
               ),
               SizedBox(height: 16),
               Text(
-                'Thank you for helping keep ChugLi safe.\nOur moderation team will review this report.',
+                'Thank you for helping keep Zippi safe.\nOur moderation team will review this report.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 16,

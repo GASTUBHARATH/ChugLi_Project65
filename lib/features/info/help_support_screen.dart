@@ -52,7 +52,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               const SizedBox(height: 16),
               _buildFAQCard(
                 context,
-                "Is ChugLi truly anonymous?",
+                "Is Zippi truly anonymous?",
                 "Yes. We do not require real names or profile pictures. Your handle is auto-generated and randomly changed on request. We do not store chat histories after rooms expire.",
               ),
               const SizedBox(height: 16),
@@ -65,7 +65,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
               _buildFAQCard(
                 context,
                 "How does the radius work?",
-                "ChugLi uses your approximate GPS location to show you rooms within your chosen radius (0.5 km – 5 km). Your exact location is never shared with other users.",
+                "Zippi uses your approximate GPS location to show you rooms within your chosen radius (0.5 km – 5 km). Your exact location is never shared with other users.",
               ),
               const SizedBox(height: 16),
               _buildFAQCard(

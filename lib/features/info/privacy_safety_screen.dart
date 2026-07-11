@@ -44,7 +44,7 @@ class PrivacySafetyScreen extends StatelessWidget {
                 _buildActionTile(context, "Anonymous Profiles", Icons.person_outline_rounded, onTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyDetailScreen(
                     title: "Anonymous Profiles",
-                    content: "ChugLi is built around anonymity. No real names are required — your identity is protected at all times.\n\nWe never ask for your email, phone number, or any personal information. You interact through anonymous handles that you can change anytime.\n\nYour conversations, reactions, and activity are never linked to your real identity. We believe in giving you the freedom to express yourself without judgment.",
+                    content: "Zippi is built around anonymity. No real names are required — your identity is protected at all times.\n\nWe never ask for your email, phone number, or any personal information. You interact through anonymous handles that you can change anytime.\n\nYour conversations, reactions, and activity are never linked to your real identity. We believe in giving you the freedom to express yourself without judgment.",
                   )));
                 }),
                 _buildDivider(),
@@ -77,14 +77,14 @@ class PrivacySafetyScreen extends StatelessWidget {
                 _buildActionTile(context, "Community Moderation", Icons.shield_outlined, onTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyDetailScreen(
                     title: "Community Moderation",
-                    content: "ChugLi has built-in community moderation to keep conversations safe.\n\nAuto-ban protection automatically removes users who receive reports from more than 50% of participants in a room.\n\nRoom creators have moderation controls including the ability to pin messages and end rooms early. This distributed approach ensures that the community helps maintain standards.",
+                    content: "Zippi has built-in community moderation to keep conversations safe.\n\nAuto-ban protection automatically removes users who receive reports from more than 50% of participants in a room.\n\nRoom creators have moderation controls including the ability to pin messages and end rooms early. This distributed approach ensures that the community helps maintain standards.",
                   )));
                 }),
                 _buildDivider(),
                 _buildActionTile(context, "Screenshot Protection", Icons.no_photography_outlined, onTap: () {
                   Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyDetailScreen(
                     title: "Screenshot Protection",
-                    content: "Chat rooms in ChugLi have screenshot protection enabled to help keep conversations private.\n\nThis feature discourages screen capture within active conversations, adding an extra layer of privacy for all participants.\n\nWhile no technical measure is 100% foolproof, this protection serves as a strong deterrent and a signal that privacy is valued in our community.",
+                    content: "Chat rooms in Zippi have screenshot protection enabled to help keep conversations private.\n\nThis feature discourages screen capture within active conversations, adding an extra layer of privacy for all participants.\n\nWhile no technical measure is 100% foolproof, this protection serves as a strong deterrent and a signal that privacy is valued in our community.",
                   )));
                 }),
                 _buildDivider(),
@@ -267,7 +267,7 @@ class PrivacySafetyScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Your safety matters. Learn how ChugLi protects you.',
+                  'Your safety matters. Learn how Zippi protects you.',
                   style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.85),
                     fontSize: 14,

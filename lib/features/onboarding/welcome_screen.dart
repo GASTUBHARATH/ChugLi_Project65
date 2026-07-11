@@ -93,6 +93,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      extendBody: true,
       body: Stack(
         children: [
           // 1. Animated Gradient Background
@@ -126,7 +128,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     Padding(
                       padding: EdgeInsets.only(top: 20.0),
                       child: Text(
-                        "ChugLi",
+                        "Zippi",
                         style: TextStyle(
                           color: Theme.of(context).cardColor,
                           fontSize: 38,

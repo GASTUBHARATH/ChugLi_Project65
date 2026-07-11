@@ -42,7 +42,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      'Help us keep ChugLi safe, fun, and respectful for everyone.',
+                      'Help us keep Zippi safe, fun, and respectful for everyone.',
                       style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, height: 1.3),
                     ),
                   ),
@@ -81,7 +81,7 @@ class CommunityGuidelinesScreen extends StatelessWidget {
                   const Divider(height: 24),
                   _buildGuidelineItem(context, 'Stay Anonymous', 'Do not share personal identifying information.', Icons.visibility_off_rounded),
                   const Divider(height: 24),
-                  _buildGuidelineItem(context, 'Use ChugLi Respectfully', 'Contribute positively to the community.', Icons.favorite_rounded),
+                  _buildGuidelineItem(context, 'Use Zippi Respectfully', 'Contribute positively to the community.', Icons.favorite_rounded),
                 ],
               ),
             ),

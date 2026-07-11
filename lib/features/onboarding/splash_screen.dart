@@ -94,6 +94,8 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      extendBody: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -135,19 +137,19 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   child: const Center(
                     child: Text(
-                      'CL',
+                      'Z',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 36,
+                        fontSize: 40,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: -2,
+                        letterSpacing: -1,
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  'ChugLi',
+                  'Zippi',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 42,

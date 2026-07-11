@@ -3,5 +3,9 @@
     <!-- Theme applied to the Android Window while the process is starting on API 31+ -->
     <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
         <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <!-- Android 12+: render into cutout area in ALL orientations -->
+        <item name="android:windowLayoutInDisplayCutoutMode">always</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 </resources>

@@ -1,4 +1,4 @@
-package com.chugli.app
+package com.zippi.chat
 
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
@@ -6,7 +6,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.chugli.app/secure"
+    private val CHANNEL = "com.zippi.chat/secure"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

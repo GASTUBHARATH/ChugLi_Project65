@@ -1,5 +1,5 @@
 name: chugli_project65
-description: "ChugLi – Anonymous, location-based chat rooms for real conversations with people near you."
+description: "Zippi – Anonymous, location-based chat rooms for real conversations with people near you."
 publish_to: 'none'
 
 version: 1.2.1+5
@@ -30,9 +30,16 @@ dependencies:
 
 
 dev_dependencies:
+  flutter_launcher_icons: ^0.13.1
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
 
 flutter:
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  min_sdk_android: 21

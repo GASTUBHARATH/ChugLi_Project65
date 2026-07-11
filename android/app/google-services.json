@@ -61,6 +61,44 @@
           "other_platform_oauth_client": []
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:345905234462:android:ae7bbed4b2cdfe5e62240f",
+        "android_client_info": {
+          "package_name": "com.zippi.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVM3gIp4zOZgXxjDXq9x5I1SfhwwtLtb8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:345905234462:android:2f8f2590544ea6c462240f",
+        "android_client_info": {
+          "package_name": "com.zippi.chat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVM3gIp4zOZgXxjDXq9x5I1SfhwwtLtb8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
     }
   ],
   "configuration_version": "1"

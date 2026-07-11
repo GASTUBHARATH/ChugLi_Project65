@@ -6,22 +6,22 @@ import 'package:chugli_project65/features/profile/interests_screen.dart';
 import 'package:chugli_project65/features/notifications/notifications_screen.dart';
 import 'package:chugli_project65/features/reports/reports_history_screen.dart';
 import 'package:chugli_project65/features/rooms/my_rooms_screen.dart';
-import 'package:chugli_project65/features/info/how_chugli_works_screen.dart';
+import 'package:chugli_project65/features/info/how_zippi_works_screen.dart';
 import 'package:chugli_project65/features/info/privacy_safety_screen.dart';
 import 'package:chugli_project65/features/settings/settings_screen.dart';
 import 'package:chugli_project65/features/profile/change_radius_screen.dart';
 import 'package:chugli_project65/features/activity/recent_activity_screen.dart';
 
-class ChugliDrawer extends StatefulWidget {
+class ZippiDrawer extends StatefulWidget {
   final VoidCallback? onRadiusChanged;
 
-  const ChugliDrawer({super.key, this.onRadiusChanged});
+  const ZippiDrawer({super.key, this.onRadiusChanged});
 
   @override
-  State<ChugliDrawer> createState() => _ChugliDrawerState();
+  State<ZippiDrawer> createState() => _ZippiDrawerState();
 }
 
-class _ChugliDrawerState extends State<ChugliDrawer> {
+class _ZippiDrawerState extends State<ZippiDrawer> {
   // 1. selectedDrawerIndex variable
   int _selectedDrawerIndex = -1;
   String _userHandle = "Anonymous User";
@@ -135,7 +135,7 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
                   _buildDrawerItem(
                     index: 7,
                     icon: "❓",
-                    title: "How ChugLi Works",
+                    title: "How Zippi Works",
                   ),
                   _buildDrawerItem(
                     index: 8,
@@ -199,7 +199,7 @@ class _ChugliDrawerState extends State<ChugliDrawer> {
           } else if (index == 6) {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const RecentActivityScreen()));
           } else if (index == 7) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const HowChugLiWorksScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const HowZippiWorksScreen()));
           } else if (index == 8) {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySafetyScreen()));
           } else if (index == 9) {

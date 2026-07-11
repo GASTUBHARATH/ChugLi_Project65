@@ -35,7 +35,7 @@ class UserStatusWrapper extends StatelessWidget {
                   context,
                   title: 'Account Banned',
                   message:
-                      'Your account has been permanently banned due to severe or repeated violations of our community guidelines. You can no longer access Chugli.',
+                      'Your account has been permanently banned due to severe or repeated violations of our community guidelines. You can no longer access Zippi.',
                   icon: Icons.gavel_rounded,
                   color: Colors.redAccent,
                 );

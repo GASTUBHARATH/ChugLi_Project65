@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class AboutChugliScreen extends StatelessWidget {
-  const AboutChugliScreen({super.key});
+class AboutZippiScreen extends StatelessWidget {
+  const AboutZippiScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -36,17 +36,17 @@ class AboutChugliScreen extends StatelessWidget {
                   ],
                 ),
                 child: Center(
-                  child: Text("C", style: TextStyle(color: Colors.white, fontSize: 48, fontWeight: FontWeight.bold)),
+                  child: Text("Z", style: TextStyle(color: Colors.white, fontSize: 48, fontWeight: FontWeight.bold)),
                 ),
               ),
               SizedBox(height: 24),
               Text(
-                "ChugLi",
+                "Zippi",
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
               ),
               SizedBox(height: 4),
               Text(
-                "Version 1.0.0",
+                "Version 1.2.1",
                 style: TextStyle(fontSize: 14, color: Colors.grey),
               ),
               SizedBox(height: 40),
@@ -64,7 +64,7 @@ class AboutChugliScreen extends StatelessWidget {
               ),
               SizedBox(height: 8),
               Text(
-                "© 2026 ChugLi Inc.",
+                "© 2026 Zippi Inc.",
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
