@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:chugli_project65/features/info/community_guidelines_screen.dart';
 
-class ZippiFlowScreen extends StatelessWidget {
-  const ZippiFlowScreen({super.key});
+class BolbroFlowScreen extends StatelessWidget {
+  const BolbroFlowScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,7 @@ class ZippiFlowScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'The Zippi Flow',
+          'The Bolbro Flow',
           style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
@@ -46,7 +46,7 @@ class ZippiFlowScreen extends StatelessWidget {
                   _buildTimelineItem(context, '3.', 'Join or Create a Room', 'Join an existing room or create your own.', Icons.add_circle_rounded, Colors.green),
                   _buildTimelineItem(context, '4.', 'Chat Anonymously', 'Talk in real time.\nNo names.\nNo profiles.', Icons.forum_rounded, const Color(0xFF6C47FF)),
                   _buildTimelineItem(context, '5.', 'Room Expires', 'Rooms end when the timer is up.', Icons.timer_rounded, const Color(0xFFFFC83D)),
-                  _buildTimelineItem(context, '6.', 'Stay Safe', 'Report issues.\nOur moderators keep Zippi safe.', Icons.shield_rounded, const Color(0xFF00C48C), isLast: true),
+                  _buildTimelineItem(context, '6.', 'Stay Safe', 'Report issues.\nOur moderators keep Bolbro safe.', Icons.shield_rounded, const Color(0xFF00C48C), isLast: true),
                 ],
               ),
             ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class AboutZippiScreen extends StatelessWidget {
-  const AboutZippiScreen({super.key});
+class AboutBolbroScreen extends StatelessWidget {
+  const AboutBolbroScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +41,7 @@ class AboutZippiScreen extends StatelessWidget {
               ),
               SizedBox(height: 24),
               Text(
-                "Zippi",
+                "Bolbro",
                 style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
               ),
               SizedBox(height: 4),
@@ -64,7 +64,7 @@ class AboutZippiScreen extends StatelessWidget {
               ),
               SizedBox(height: 8),
               Text(
-                "© 2026 Zippi Inc.",
+                "© 2026 Bolbro Inc.",
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],

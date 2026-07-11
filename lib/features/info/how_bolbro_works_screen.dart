@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:chugli_project65/features/home/zippi_flow_screen.dart';
+import 'package:chugli_project65/features/home/bolbro_flow_screen.dart';
 
-class HowZippiWorksScreen extends StatelessWidget {
-  const HowZippiWorksScreen({super.key});
+class HowBolbroWorksScreen extends StatelessWidget {
+  const HowBolbroWorksScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +16,7 @@ class HowZippiWorksScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          'How Zippi Works',
+          'How Bolbro Works',
           style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color, fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
@@ -73,16 +73,16 @@ class HowZippiWorksScreen extends StatelessWidget {
             ),
             SizedBox(height: 32),
 
-            // The Zippi Flow
+            // The Bolbro Flow
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'The Zippi Flow',
+                  'The Bolbro Flow',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).textTheme.bodyLarge?.color),
                 ),
                 TextButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ZippiFlowScreen())),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BolbroFlowScreen())),
                   child: Text('Learn More', style: TextStyle(color: Color(0xFF6C47FF), fontWeight: FontWeight.bold)),
                 )
               ],
@@ -91,7 +91,7 @@ class HowZippiWorksScreen extends StatelessWidget {
             GestureDetector(
               onTap: () {
                 HapticFeedback.selectionClick();
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ZippiFlowScreen()));
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const BolbroFlowScreen()));
               },
               child: Container(
                 padding: EdgeInsets.all(20),
@@ -115,9 +115,9 @@ class HowZippiWorksScreen extends StatelessWidget {
             ),
             SizedBox(height: 32),
 
-            // Why Zippi Section
+            // Why Bolbro Section
             Text(
-              'Why Zippi',
+              'Why Bolbro',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Theme.of(context).textTheme.bodyLarge?.color),
             ),
             SizedBox(height: 16),
@@ -132,7 +132,7 @@ class HowZippiWorksScreen extends StatelessWidget {
                 _buildWhyCard(context, '100% Anonymous', 'No names, no profiles, no pressure.', Icons.person_off, const Color(0xFF5B8CFF)),
                 _buildWhyCard(context, 'Real-time Rooms', 'Every room expires. Stay in the moment.', Icons.timer_rounded, const Color(0xFFFFC83D)),
                 _buildWhyCard(context, 'Location Based', 'Connect with people near you.', Icons.my_location_rounded, const Color(0xFFFF7A59)),
-                _buildWhyCard(context, 'Safe & Moderated', 'We keep Zippi safe for everyone.', Icons.shield_rounded, const Color(0xFF00C48C)),
+                _buildWhyCard(context, 'Safe & Moderated', 'We keep Bolbro safe for everyone.', Icons.shield_rounded, const Color(0xFF00C48C)),
               ],
             ),
             SizedBox(height: 32),
@@ -156,7 +156,7 @@ class HowZippiWorksScreen extends StatelessWidget {
                   const Divider(height: 24),
                   _buildFeatureRow(context, 'Rooms auto-expire after the timer ends'),
                   const Divider(height: 24),
-                  _buildFeatureRow(context, 'Report issues and help keep Zippi safe'),
+                  _buildFeatureRow(context, 'Report issues and help keep Bolbro safe'),
                   const Divider(height: 24),
                   _buildFeatureRow(context, 'Custom radius & interest-based discovery'),
                   const Divider(height: 24),
@@ -176,7 +176,7 @@ class HowZippiWorksScreen extends StatelessWidget {
               ),
               child: Center(
                 child: Text(
-                  'Zippi is built to help you have meaningful conversations — anonymously, safely, and locally.',
+                  'Bolbro is built to help you have meaningful conversations — anonymously, safely, and locally.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Color(0xFF6C47FF), fontWeight: FontWeight.bold, fontSize: 14, height: 1.5),
                 ),

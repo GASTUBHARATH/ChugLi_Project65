@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Zippi</string>
+	<string>Bolbro</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Zippi</string>
+	<string>Bolbro</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -27,11 +27,11 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>Zippi requires access to your location to find nearby rooms.</string>
+	<string>Bolbro requires access to your location to find nearby rooms.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
-	<string>Zippi requires access to your location to find nearby rooms in the background.</string>
+	<string>Bolbro requires access to your location to find nearby rooms in the background.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Zippi requires access to your location to find nearby rooms.</string>
+	<string>Bolbro requires access to your location to find nearby rooms.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

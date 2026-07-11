@@ -31,7 +31,7 @@ const AndroidNotificationChannel _nearbyRoomsChannel = AndroidNotificationChanne
 const AndroidNotificationChannel _broadcastsChannel = AndroidNotificationChannel(
   _broadcastsChannelId,
   'Announcements',
-  description: 'Important announcements from the Zippi team.',
+  description: 'Important announcements from the Bolbro team.',
   importance: Importance.max,
   playSound: true,
   enableVibration: true,

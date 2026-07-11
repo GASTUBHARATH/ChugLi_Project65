@@ -73,7 +73,7 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           navigatorKey: navigatorKey,
           debugShowCheckedModeBanner: false,
-          title: 'Zippi',
+          title: 'Bolbro',
           builder: (context, child) => BroadcastBannerWrapper(
             child: UserStatusWrapper(child: child!),
           ),

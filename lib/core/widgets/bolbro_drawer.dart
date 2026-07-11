@@ -6,22 +6,22 @@ import 'package:chugli_project65/features/profile/interests_screen.dart';
 import 'package:chugli_project65/features/notifications/notifications_screen.dart';
 import 'package:chugli_project65/features/reports/reports_history_screen.dart';
 import 'package:chugli_project65/features/rooms/my_rooms_screen.dart';
-import 'package:chugli_project65/features/info/how_zippi_works_screen.dart';
+import 'package:chugli_project65/features/info/how_bolbro_works_screen.dart';
 import 'package:chugli_project65/features/info/privacy_safety_screen.dart';
 import 'package:chugli_project65/features/settings/settings_screen.dart';
 import 'package:chugli_project65/features/profile/change_radius_screen.dart';
 import 'package:chugli_project65/features/activity/recent_activity_screen.dart';
 
-class ZippiDrawer extends StatefulWidget {
+class BolbroDrawer extends StatefulWidget {
   final VoidCallback? onRadiusChanged;
 
-  const ZippiDrawer({super.key, this.onRadiusChanged});
+  const BolbroDrawer({super.key, this.onRadiusChanged});
 
   @override
-  State<ZippiDrawer> createState() => _ZippiDrawerState();
+  State<BolbroDrawer> createState() => _BolbroDrawerState();
 }
 
-class _ZippiDrawerState extends State<ZippiDrawer> {
+class _BolbroDrawerState extends State<BolbroDrawer> {
   // 1. selectedDrawerIndex variable
   int _selectedDrawerIndex = -1;
   String _userHandle = "Anonymous User";
@@ -135,7 +135,7 @@ class _ZippiDrawerState extends State<ZippiDrawer> {
                   _buildDrawerItem(
                     index: 7,
                     icon: "❓",
-                    title: "How Zippi Works",
+                    title: "How Bolbro Works",
                   ),
                   _buildDrawerItem(
                     index: 8,
@@ -199,7 +199,7 @@ class _ZippiDrawerState extends State<ZippiDrawer> {
           } else if (index == 6) {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const RecentActivityScreen()));
           } else if (index == 7) {
-            Navigator.push(context, MaterialPageRoute(builder: (_) => const HowZippiWorksScreen()));
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const HowBolbroWorksScreen()));
           } else if (index == 8) {
             Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySafetyScreen()));
           } else if (index == 9) {

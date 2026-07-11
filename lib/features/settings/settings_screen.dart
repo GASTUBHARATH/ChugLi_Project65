@@ -9,7 +9,7 @@ import 'package:chugli_project65/features/notifications/notifications_screen.dar
 
 import 'package:chugli_project65/features/settings/muted_rooms_screen.dart';
 import 'package:chugli_project65/features/info/help_support_screen.dart';
-import 'package:chugli_project65/features/info/about_zippi_screen.dart';
+import 'package:chugli_project65/features/info/about_bolbro_screen.dart';
 import 'package:chugli_project65/features/onboarding/welcome_screen.dart';
 import 'package:chugli_project65/core/theme/theme_provider.dart';
 import 'package:chugli_project65/data/services/firestore_room_service.dart';
@@ -384,8 +384,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpSupportScreen()));
                   }),
                   _buildDivider(),
-                  _buildActionTile("About Zippi", Icons.info_outline_rounded, onTap: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutZippiScreen()));
+                  _buildActionTile("About Bolbro", Icons.info_outline_rounded, onTap: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutBolbroScreen()));
                   }),
                 ],
               ),

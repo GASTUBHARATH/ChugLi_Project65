@@ -128,7 +128,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     Padding(
                       padding: EdgeInsets.only(top: 20.0),
                       child: Text(
-                        "Zippi",
+                        "Bolbro",
                         style: TextStyle(
                           color: Theme.of(context).cardColor,
                           fontSize: 38,

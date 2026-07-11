@@ -137,7 +137,7 @@ class _SplashScreenState extends State<SplashScreen>
                   ),
                   child: const Center(
                     child: Text(
-                      'Z',
+                      'B',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 40,
@@ -149,7 +149,7 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  'Zippi',
+                  'Bolbro',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 42,

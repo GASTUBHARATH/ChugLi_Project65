@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:chugli_project65/core/widgets/zippi_drawer.dart';
+import 'package:chugli_project65/core/widgets/bolbro_drawer.dart';
 import 'package:chugli_project65/features/rooms/create_room_screen.dart';
 import 'package:chugli_project65/data/services/firestore_room_service.dart';
 import 'package:chugli_project65/data/services/location_service.dart';
@@ -149,7 +149,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       extendBody: true,
-      drawer: ZippiDrawer(
+      drawer: BolbroDrawer(
         onRadiusChanged: _loadRadius,
       ),
       body: RefreshIndicator(
@@ -202,7 +202,7 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
                         ),
                       ),
                       Text(
-                        "Zippi",
+                        "Bolbro",
                         style: TextStyle(
                           color: Theme.of(context).cardColor,
                           fontSize: 26,

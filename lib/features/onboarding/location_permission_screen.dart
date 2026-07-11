@@ -81,7 +81,7 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
         ),
         content: const Text(
-          "Location access is blocked. Please go to Settings → Zippi → Location and set it to \"While Using\".",
+          "Location access is blocked. Please go to Settings → Bolbro → Location and set it to \"While Using\".",
           style: TextStyle(color: Colors.grey, fontSize: 16),
         ),
         actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

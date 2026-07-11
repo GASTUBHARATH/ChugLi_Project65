@@ -15,7 +15,7 @@ class RoomConversationScreen extends StatefulWidget {
 }
 
 class _RoomConversationScreenState extends State<RoomConversationScreen> {
-  static const _secureChannel = MethodChannel('com.zippi.chat/secure');
+  static const _secureChannel = MethodChannel('com.bolbro.chat/secure');
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   Timer? _timer;
@@ -662,7 +662,7 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
             ),
             const SizedBox(height: 12),
             const Text(
-              'The majority of participants reported your messages in this room. You can still use Zippi and join other rooms.',
+              'The majority of participants reported your messages in this room. You can still use Bolbro and join other rooms.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.grey, fontSize: 14, height: 1.5),
             ),

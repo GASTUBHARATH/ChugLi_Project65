@@ -7,6 +7,25 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:345905234462:android:56dd56e95ae3bf7562240f",
+        "android_client_info": {
+          "package_name": "com.bolbro.chat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVM3gIp4zOZgXxjDXq9x5I1SfhwwtLtb8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:345905234462:android:6430d22aef3ccede62240f",
         "android_client_info": {
           "package_name": "com.chugli.app"

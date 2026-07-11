@@ -1,6 +1,6 @@
 import 'package:geolocator/geolocator.dart';
 
-/// Singleton location service used throughout the Zippi app.
+/// Singleton location service used throughout the Bolbro app.
 ///
 /// Call [getCurrentLocation] to request permission + fetch GPS.
 /// Access [latitude] / [longitude] any time after a successful fetch.
