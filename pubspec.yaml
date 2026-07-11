@@ -2,7 +2,7 @@ name: chugli_project65
 description: "Bolbro – Anonymous, location-based chat rooms for real conversations with people near you."
 publish_to: 'none'
 
-version: 1.2.1+5
+version: 1.2.2+6
 
 environment:
   sdk: ^3.12.2

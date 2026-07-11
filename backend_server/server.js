@@ -69,29 +69,28 @@ async function cleanUpStaleTokens(staleTokens) {
   console.log(`🧹 Removed ${staleTokens.length} stale tokens.`);
 }
 
-// Keep track of the start time (minus 5 minutes for clock skew)
+// Keep track of the start time (minus 1 hour for server sleep cycles)
 // This prevents reading the entire database on startup while avoiding missed events.
-const startTimeMillis = Date.now() - 5 * 60 * 1000;
+const startTimeMillis = Date.now() - 60 * 60 * 1000;
 const START_TIME = admin.firestore.Timestamp.fromMillis(startTimeMillis);
 
 console.log("🎧 Listening for new rooms...");
-
-let isRoomsInitialLoad = true;
 
 // Set up a real-time listener on the 'rooms' collection
 db.collection("rooms")
   .where("createdAt", ">", START_TIME)
   .onSnapshot(async (snapshot) => {
-    if (isRoomsInitialLoad) {
-      isRoomsInitialLoad = false;
-      return;
-    }
-
     snapshot.docChanges().forEach(async (change) => {
       // We only care about newly created rooms
       if (change.type === "added") {
         const room = change.doc.data();
         const roomId = change.doc.id;
+
+        // Prevent duplicate notifications if the server restarts
+        if (room.notificationSent) return;
+
+        // Mark as sent immediately to avoid race conditions
+        db.collection("rooms").doc(roomId).update({ notificationSent: true }).catch(console.error);
 
         await processNewRoom(roomId, room);
       }
@@ -203,7 +202,6 @@ async function processNewRoom(roomId, room) {
         priority: "high",
         notification: {
           channelId: "nearby_rooms",
-          priority: "high",
           defaultSound: true,
           clickAction: "FLUTTER_NOTIFICATION_CLICK",
         },
@@ -262,25 +260,23 @@ server.listen(PORT, () => {
 // When a new broadcast is detected, it sends an FCM push notification to ALL
 // users who have an fcmToken stored in their Firestore user document.
 
-const broadcastStartTimeMillis = Date.now() - 5 * 60 * 1000;
+const broadcastStartTimeMillis = Date.now() - 60 * 60 * 1000;
 const BROADCAST_START_TIME = admin.firestore.Timestamp.fromMillis(broadcastStartTimeMillis);
 
 console.log("📣 Listening for new broadcasts...");
 
-let isBroadcastsInitialLoad = true;
-
 db.collection("broadcasts")
   .where("createdAt", ">", BROADCAST_START_TIME)
   .onSnapshot(async (snapshot) => {
-    if (isBroadcastsInitialLoad) {
-      isBroadcastsInitialLoad = false;
-      return;
-    }
-
     snapshot.docChanges().forEach(async (change) => {
       if (change.type === "added") {
         const broadcast = change.doc.data();
         const broadcastId = change.doc.id;
+
+        if (broadcast.notificationSent) return;
+        
+        db.collection("broadcasts").doc(broadcastId).update({ notificationSent: true }).catch(console.error);
+
         await processBroadcast(broadcastId, broadcast);
       }
     });
@@ -336,7 +332,6 @@ async function processBroadcast(broadcastId, broadcast) {
         priority: "high",
         notification: {
           channelId: "broadcasts",
-          priority: "high",
           defaultSound: true,
           clickAction: "FLUTTER_NOTIFICATION_CLICK",
         },
