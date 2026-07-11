@@ -1,63 +1,113 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class UserStatusWrapper extends StatelessWidget {
+/// Listens to the current user's Firestore document for ban/suspend status.
+///
+/// Converted from nested StreamBuilders to a StatefulWidget with manual
+/// subscriptions so that regular document updates (handle, location, etc.)
+/// do NOT cause the child widget tree to rebuild — only actual changes to
+/// `isBanned` or `isSuspended` trigger a rebuild.
+class UserStatusWrapper extends StatefulWidget {
   final Widget child;
 
   const UserStatusWrapper({super.key, required this.child});
 
   @override
+  State<UserStatusWrapper> createState() => _UserStatusWrapperState();
+}
+
+class _UserStatusWrapperState extends State<UserStatusWrapper> {
+  StreamSubscription<User?>? _authSub;
+  StreamSubscription<DocumentSnapshot>? _userDocSub;
+
+  bool _isBanned = false;
+  bool _isSuspended = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _authSub = FirebaseAuth.instance.authStateChanges().listen(_onAuthChanged);
+  }
+
+  void _onAuthChanged(User? user) {
+    // Cancel any previous Firestore subscription.
+    _userDocSub?.cancel();
+    _userDocSub = null;
+
+    if (user == null) {
+      // No user — reset to normal state.
+      if (_isBanned || _isSuspended) {
+        setState(() {
+          _isBanned = false;
+          _isSuspended = false;
+        });
+      }
+      return;
+    }
+
+    // Listen to the user's Firestore document.
+    _userDocSub = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .snapshots()
+        .listen((snapshot) {
+      if (!mounted) return;
+
+      bool banned = false;
+      bool suspended = false;
+
+      if (snapshot.exists) {
+        final data = snapshot.data();
+        if (data != null) {
+          banned = data['isBanned'] == true;
+          suspended = data['isSuspended'] == true;
+        }
+      }
+
+      // Only call setState when the ban/suspend status actually changes.
+      if (banned != _isBanned || suspended != _isSuspended) {
+        setState(() {
+          _isBanned = banned;
+          _isSuspended = suspended;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    _userDocSub?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, authSnapshot) {
-        final user = authSnapshot.data;
-        if (user == null) return child;
+    if (_isBanned) {
+      return _buildOverlay(
+        context,
+        title: 'Account Banned',
+        message:
+            'Your account has been permanently banned due to severe or repeated violations of our community guidelines. You can no longer access Bolbro.',
+        icon: Icons.gavel_rounded,
+        color: Colors.redAccent,
+      );
+    }
 
-        return StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return child;
-            }
+    if (_isSuspended) {
+      return _buildOverlay(
+        context,
+        title: 'Account Suspended',
+        message:
+            'Your account is temporarily suspended for violating our community guidelines. Please check back later.',
+        icon: Icons.timer_off_outlined,
+        color: Colors.orangeAccent,
+      );
+    }
 
-            if (snapshot.hasData && snapshot.data!.exists) {
-              final data = snapshot.data!.data() as Map<String, dynamic>;
-              final isBanned = data['isBanned'] == true;
-              final isSuspended = data['isSuspended'] == true;
-
-              if (isBanned) {
-                return _buildOverlay(
-                  context,
-                  title: 'Account Banned',
-                  message:
-                      'Your account has been permanently banned due to severe or repeated violations of our community guidelines. You can no longer access Bolbro.',
-                  icon: Icons.gavel_rounded,
-                  color: Colors.redAccent,
-                );
-              }
-
-              if (isSuspended) {
-                return _buildOverlay(
-                  context,
-                  title: 'Account Suspended',
-                  message:
-                      'Your account is temporarily suspended for violating our community guidelines. Please check back later.',
-                  icon: Icons.timer_off_outlined,
-                  color: Colors.orangeAccent,
-                );
-              }
-            }
-
-            return child;
-          },
-        );
-      },
-    );
+    return widget.child;
   }
 
   Widget _buildOverlay(

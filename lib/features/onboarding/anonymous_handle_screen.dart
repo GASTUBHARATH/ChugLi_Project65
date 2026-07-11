@@ -19,6 +19,7 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
   String? _selectedHandle;
   bool _showCustomInput = false;
   bool _isLoading = false;
+  bool _isSettingTextProgrammatically = false;
 
   // Dynamically generated suggestions
   List<String> _suggestions = [];
@@ -61,14 +62,20 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
 
   void _selectSuggestion(String suggestion) {
     HapticFeedback.lightImpact();
+    _isSettingTextProgrammatically = true;
     setState(() {
       _selectedHandle = suggestion;
       _showCustomInput = false;
       _handleController.text = HandleGenerator.textOnly(suggestion);
     });
+    // Reset the flag after the current frame so onChanged won't clear the selection.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _isSettingTextProgrammatically = false;
+    });
   }
 
   void _onHandleSubmit() async {
+    if (_isLoading) return; // Prevent double-taps
     final handle = _handleController.text.trim();
     if (handle.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -426,7 +433,9 @@ class _AnonymousHandleScreenState extends State<AnonymousHandleScreen>
           FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9_]')),
         ],
         onChanged: (val) {
-          setState(() => _selectedHandle = null);
+          if (!_isSettingTextProgrammatically) {
+            setState(() => _selectedHandle = null);
+          }
         },
         validator: _validateHandle,
         decoration: InputDecoration(

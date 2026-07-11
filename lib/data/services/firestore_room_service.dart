@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:dart_geohash/dart_geohash.dart';
@@ -484,7 +485,8 @@ class FirestoreRoomService {
         fcmToken: fcmToken,
       );
     } catch (e) {
-      // Ignore background sync errors
+      // Log the error so notification issues can be debugged.
+      debugPrint('⚠️ syncUserLocationAndNotifications failed: $e');
     }
   }
 

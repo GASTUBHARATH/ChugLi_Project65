@@ -1,6 +1,8 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // ── Notification channel IDs ──────────────────────────────────────────────────
 const String _nearbyRoomsChannelId = 'nearby_rooms';
@@ -126,6 +128,26 @@ class FCMService {
       await Future.delayed(const Duration(milliseconds: 500));
       _navigateFromMessage(initialMessage);
     }
+
+    // 9. Listen for FCM token refresh — when Android/iOS rotates the token,
+    //    save the new one to Firestore so notifications keep working.
+    _messaging.onTokenRefresh.listen((newToken) {
+      debugPrint('🔄 FCM token refreshed: $newToken');
+      _saveTokenToFirestore(newToken);
+    });
+
+    // 10. Also eagerly save the current token on every app launch.
+    //     This ensures the token is present even if the onboarding flow
+    //     didn't sync it (e.g., user skipped location).
+    try {
+      final currentToken = await _messaging.getToken();
+      if (currentToken != null) {
+        debugPrint('📲 Saving current FCM token on startup: $currentToken');
+        _saveTokenToFirestore(currentToken);
+      }
+    } catch (e) {
+      debugPrint('⚠️ Could not save FCM token on startup: $e');
+    }
   }
 
   // ── Get FCM token (used by syncUserLocationAndNotifications) ─────────────
@@ -150,6 +172,22 @@ class FCMService {
       debugPrint('❌ Error getting FCM token: $e');
       return null;
     }
+  }
+
+  /// Saves a single FCM token to the current user's Firestore document.
+  /// Called on token refresh and on each app startup.
+  void _saveTokenToFirestore(String token) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    FirebaseFirestore.instance.collection('users').doc(uid).set({
+      'fcmTokens': FieldValue.arrayUnion([token]),
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true)).then((_) {
+      debugPrint('✅ FCM token saved to Firestore for uid=$uid');
+    }).catchError((e) {
+      debugPrint('⚠️ Failed to save FCM token to Firestore: $e');
+    });
   }
 
   // ── Foreground handler ────────────────────────────────────────────────────

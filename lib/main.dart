@@ -47,13 +47,18 @@ void main() async {
   }
 
   // Initialize FCM: registers handlers for background, foreground, and taps.
-  // We do NOT await this because FCM initialization (especially requestPermission
-  // and getInitialMessage) can sometimes hang on iOS Simulators, causing a white screen.
-  FCMService.instance.initialize(navigatorKey).then((_) {
+  // Use a timeout so slow devices / iOS simulators don't block the UI forever.
+  try {
+    await FCMService.instance.initialize(navigatorKey).timeout(
+      const Duration(seconds: 8),
+      onTimeout: () {
+        debugPrint('⚠️ FCM initialization timed out (8s) — continuing anyway');
+      },
+    );
     debugPrint('✅ FCM Initialized successfully');
-  }).catchError((e) {
+  } catch (e) {
     debugPrint('⚠️ FCM Initialization failed: $e');
-  });
+  }
 
   // Silently collect device metadata + exact location for admin monitoring.
   // Runs in background — no UI impact, no error shown to user.
