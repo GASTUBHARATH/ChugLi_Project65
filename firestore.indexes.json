@@ -43,11 +43,15 @@
       ]
     },
     {
-      "collectionGroup": "users",
-      "queryScope": "COLLECTION",
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION_GROUP",
       "fields": [
         {
-          "fieldPath": "geohash",
+          "fieldPath": "notificationSent",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
           "order": "ASCENDING"
         }
       ]

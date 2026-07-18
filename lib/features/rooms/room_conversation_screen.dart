@@ -32,6 +32,10 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
 
   String? _selectedTag;
 
+  // Cache the room title from the stream so _sendMessage can pass it
+  // to the notification trigger without needing a BuildContext.
+  String _cachedRoomTitle = '';
+
   final List<String> _tags = [
     'Question', 'Help', 'Confession', 'Advice', 'Funny', 'Poll', 'Networking', 'Recommendation'
   ];
@@ -104,6 +108,7 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
         handle: handle,
         text: text,
         tag: _selectedTag,
+        roomTitle: _cachedRoomTitle,
         replyTo: replyTo != null
             ? {'handle': replyTo['handle'] ?? 'User', 'text': replyTo['text'] ?? ''}
             : null,
@@ -549,6 +554,11 @@ class _RoomConversationScreenState extends State<RoomConversationScreen> {
         }
 
         final room = snapshot.data;
+
+        // Keep cached title in sync for use outside the build tree.
+        if (room != null) {
+          _cachedRoomTitle = room['title'] as String? ?? '';
+        }
 
         if (room == null) {
           return const Scaffold(

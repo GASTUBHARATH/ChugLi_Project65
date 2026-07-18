@@ -435,3 +435,119 @@ async function getTokensForActiveRoomUsers() {
 
   return tokens;
 }
+
+// ── Mention & Reply notification listener ─────────────────────────────────────
+// The Flutter client writes a doc to users/{uid}/notifications/ whenever a
+// user is replied to or @mentioned. We pick up new docs here and send the FCM.
+
+const notifStartTime = admin.firestore.Timestamp.fromMillis(Date.now() - 60 * 60 * 1000);
+
+console.log("💬 Listening for mention/reply notifications...");
+
+db.collectionGroup("notifications")
+  .where("createdAt", ">", notifStartTime)
+  .where("notificationSent", "==", false)
+  .onSnapshot(async (snapshot) => {
+    for (const change of snapshot.docChanges()) {
+      if (change.type !== "added") continue;
+
+      const notif = change.doc.data();
+      const notifRef = change.doc.ref;
+
+      // Dedup guard — skip if already processed.
+      if (notif.notificationSent) continue;
+
+      // Immediately mark as sent to prevent duplicate deliveries on reconnect.
+      notifRef.update({ notificationSent: true }).catch(console.error);
+
+      // Path: users/{targetUid}/notifications/{notifId}
+      // parent      = notifications collection ref under a user doc
+      // parent.parent = the user DocumentReference  →  .id = targetUid
+      const targetUid = notifRef.parent?.parent?.id;
+      if (!targetUid) {
+        console.warn("⚠️  Could not resolve targetUid from notification path:", notifRef.path);
+        continue;
+      }
+
+      await sendMentionReplyNotification(targetUid, notif);
+    }
+  }, (err) => {
+    console.error("❌ Error listening to notifications collectionGroup:", err);
+  });
+
+async function sendMentionReplyNotification(targetUid, notif) {
+  try {
+    const userDoc = await db.collection("users").doc(targetUid).get();
+    if (!userDoc.exists) return;
+
+    const fcmTokens = userDoc.data().fcmTokens ?? [];
+    if (fcmTokens.length === 0) {
+      console.log(`ℹ️  User ${targetUid} has no FCM tokens — skipping.`);
+      return;
+    }
+
+    const type        = notif.type ?? "mention";
+    const sender      = notif.senderHandle ?? "Someone";
+    const roomTitle   = notif.roomTitle ?? "a room";
+    const roomId      = notif.roomId ?? "";
+    const preview     = notif.messagePreview ?? `In: ${roomTitle}`;
+
+    const title = type === "reply"
+      ? `💬 ${sender} replied to you`
+      : `🔔 ${sender} mentioned you`;
+
+    // Body: show a short message preview, fallback to room name.
+    const body = preview.length > 0 ? preview : `In room: ${roomTitle}`;
+
+    console.log(`\n📲 Sending ${type} notification to uid=${targetUid} from @${sender}`);
+
+    const message = {
+      notification: { title, body },
+      data: {
+        type,
+        roomId,
+        roomTitle,
+        senderHandle: sender,
+      },
+      android: {
+        priority: "high",
+        notification: {
+          channelId: "mentions_replies",
+          defaultSound: true,
+          clickAction: "FLUTTER_NOTIFICATION_CLICK",
+        },
+      },
+      apns: {
+        payload: {
+          aps: {
+            sound: "default",
+            badge: 1,
+          },
+        },
+      },
+      tokens: fcmTokens,
+    };
+
+    const response = await getMessaging().sendEachForMulticast(message);
+    console.log(`✅ ${type} notification: ${response.successCount} sent, ${response.failureCount} failed.`);
+
+    // Clean up any stale / invalid tokens.
+    const staleTokens = [];
+    response.responses.forEach((resp, idx) => {
+      if (!resp.success) {
+        const code = resp.error?.code ?? "";
+        if (
+          code === "messaging/registration-token-not-registered" ||
+          code === "messaging/invalid-registration-token"
+        ) {
+          staleTokens.push(fcmTokens[idx]);
+        }
+      }
+    });
+    if (staleTokens.length > 0) {
+      await cleanUpStaleTokens(staleTokens);
+    }
+  } catch (err) {
+    console.error(`❌ sendMentionReplyNotification failed for uid=${targetUid}:`, err);
+  }
+}

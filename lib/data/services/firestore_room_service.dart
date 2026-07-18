@@ -222,6 +222,7 @@ class FirestoreRoomService {
     required String text,
     String? tag,
     Map<String, String>? replyTo, // {handle, text}
+    String roomTitle = '',        // used for mention/reply notifications
   }) async {
     final uid = _uid;
     final batch = _db.batch();
@@ -251,6 +252,17 @@ class FirestoreRoomService {
     });
 
     await batch.commit();
+
+    // Fire-and-forget: trigger mention / reply push notifications.
+    // We don't await this so message delivery is never delayed.
+    _triggerMentionReplyNotification(
+      roomId: roomId,
+      roomTitle: roomTitle.isNotEmpty ? roomTitle : roomId,
+      senderHandle: handle,
+      senderUid: uid,
+      text: text,
+      replyToHandle: replyTo?['handle'],
+    );
 
     final snap = await _db
         .collection('rooms')
@@ -547,6 +559,98 @@ class FirestoreRoomService {
   Future<String?> getUserHandle() async {
     final doc = await _db.collection('users').doc(_uid).get();
     if (doc.exists) return doc.data()?['handle'] as String?;
+    return null;
+  }
+
+  // ── Trigger mention / reply notifications ────────────────────────
+  // Writes a lightweight notification doc to each target user's
+  // users/{uid}/notifications/ subcollection. The backend Node.js server
+  // listens for new docs there and sends the FCM push via Admin SDK.
+  Future<void> _triggerMentionReplyNotification({
+    required String roomId,
+    required String roomTitle,
+    required String senderHandle,
+    required String senderUid,
+    required String text,
+    String? replyToHandle,
+  }) async {
+    try {
+      // Fetch room to get scoped participant list for handle lookups.
+      final roomDoc = await _db.collection('rooms').doc(roomId).get();
+      if (!roomDoc.exists) return;
+      final participantUids =
+          List<String>.from(roomDoc.data()?['participantUids'] ?? []);
+      if (participantUids.isEmpty) return;
+
+      final Set<String> targetUids = {};
+
+      // 1. Reply — notify the person whose message was replied to.
+      if (replyToHandle != null && replyToHandle.isNotEmpty) {
+        final uid = await _resolveHandleToUid(replyToHandle, participantUids);
+        if (uid != null && uid != senderUid) targetUids.add(uid);
+      }
+
+      // 2. @mention — parse every @handle in the message text.
+      final mentionRegex = RegExp(r'@(\w+)', caseSensitive: false);
+      for (final match in mentionRegex.allMatches(text)) {
+        final mentionedHandle = match.group(1)!;
+        final uid = await _resolveHandleToUid(mentionedHandle, participantUids);
+        if (uid != null && uid != senderUid) targetUids.add(uid);
+      }
+
+      if (targetUids.isEmpty) return;
+
+      // Determine type: if both reply and mention apply, prefer 'reply'.
+      final bool isReply = replyToHandle != null && replyToHandle.isNotEmpty;
+      final String type = isReply ? 'reply' : 'mention';
+      final String preview =
+          text.length > 120 ? '${text.substring(0, 120)}…' : text;
+
+      // Write a notification doc per target user (backend picks these up).
+      final batch = _db.batch();
+      for (final targetUid in targetUids) {
+        final notifRef = _db
+            .collection('users')
+            .doc(targetUid)
+            .collection('notifications')
+            .doc();
+        batch.set(notifRef, {
+          'type': type,
+          'roomId': roomId,
+          'roomTitle': roomTitle,
+          'senderHandle': senderHandle,
+          'messagePreview': preview,
+          'createdAt': Timestamp.now(),
+          'notificationSent': false,
+        });
+      }
+      await batch.commit();
+      debugPrint('🔔 Notification docs written for ${targetUids.length} user(s).');
+    } catch (e) {
+      // Silent — notification failures must never block the chat flow.
+      debugPrint('⚠️ _triggerMentionReplyNotification failed: $e');
+    }
+  }
+
+  // ── Resolve a handle string to a Firestore UID ────────────────────
+  // Scoped to [participantUids] so cross-room mentions are ignored.
+  // Firestore `whereIn` supports up to 30 values, so we chunk.
+  Future<String?> _resolveHandleToUid(
+      String handle, List<String> participantUids) async {
+    if (participantUids.isEmpty) return null;
+    for (int i = 0; i < participantUids.length; i += 30) {
+      final chunk = participantUids.sublist(
+        i,
+        (i + 30) > participantUids.length ? participantUids.length : i + 30,
+      );
+      final snap = await _db
+          .collection('users')
+          .where(FieldPath.documentId, whereIn: chunk)
+          .where('handle', isEqualTo: handle)
+          .limit(1)
+          .get();
+      if (snap.docs.isNotEmpty) return snap.docs.first.id;
+    }
     return null;
   }
 

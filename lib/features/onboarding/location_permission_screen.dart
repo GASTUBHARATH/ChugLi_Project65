@@ -12,13 +12,17 @@ class LocationPermissionScreen extends StatefulWidget {
 }
 
 class _LocationPermissionScreenState extends State<LocationPermissionScreen>
-    with TickerProviderStateMixin {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
+
+  // True while we're waiting for the user to return from system Settings.
+  bool _waitingForSettings = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
@@ -29,8 +33,20 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _fadeController.dispose();
     super.dispose();
+  }
+
+  /// Called by the OS when the app is foregrounded again (e.g. returning from
+  /// system Settings). If we were waiting for the user to grant permission,
+  /// re-check and navigate automatically if they did.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _waitingForSettings) {
+      _waitingForSettings = false;
+      _handlePermissionRequest();
+    }
   }
 
   Future<void> _handlePermissionRequest() async {
@@ -41,7 +57,7 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
     if (!mounted) return;
 
     if (result.status == LocationStatus.deniedForever) {
-      // Show dialog asking user to open settings
+      // Permission permanently blocked — show dialog so user can open Settings.
       _showOpenSettingsDialog();
       return;
     }
@@ -54,15 +70,18 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
           behavior: SnackBarBehavior.floating,
         ),
       );
+      // Mark that we are heading to Settings so we can re-check on return.
+      _waitingForSettings = true;
       await LocationService.instance.openSettings();
       return;
     }
 
-    // Whether granted or simply denied, proceed to next screen.
+    // Permission granted (or user simply dismissed the system dialog) — proceed.
     _navigateToNext();
   }
 
   void _navigateToNext() {
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const AnonymousHandleScreen()),
@@ -72,7 +91,7 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
   void _showOpenSettingsDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (ctx) => AlertDialog(
         backgroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
@@ -88,7 +107,7 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
         actions: [
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(ctx);
               _navigateToNext();
             },
             child: const Text(
@@ -98,7 +117,9 @@ class _LocationPermissionScreenState extends State<LocationPermissionScreen>
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(ctx);
+              // Mark that we are heading to Settings so we auto-recheck on return.
+              _waitingForSettings = true;
               LocationService.instance.openSettings();
             },
             style: ElevatedButton.styleFrom(

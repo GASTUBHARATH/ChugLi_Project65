@@ -7,6 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 // ── Notification channel IDs ──────────────────────────────────────────────────
 const String _nearbyRoomsChannelId = 'nearby_rooms';
 const String _broadcastsChannelId = 'broadcasts';
+const String _mentionsRepliesChannelId = 'mentions_replies';
 
 // ── Background message handler ────────────────────────────────────────────────
 // MUST be a top-level function (not inside a class) — Flutter's isolate rules.
@@ -35,6 +36,15 @@ const AndroidNotificationChannel _broadcastsChannel = AndroidNotificationChannel
   'Announcements',
   description: 'Important announcements from the Bolbro team.',
   importance: Importance.max,
+  playSound: true,
+  enableVibration: true,
+);
+
+const AndroidNotificationChannel _mentionsRepliesChannel = AndroidNotificationChannel(
+  _mentionsRepliesChannelId,
+  'Mentions & Replies',
+  description: 'Notifications when someone replies to you or @mentions you in a room.',
+  importance: Importance.high,
   playSound: true,
   enableVibration: true,
 );
@@ -81,6 +91,7 @@ class FCMService {
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
     await androidPlugin?.createNotificationChannel(_nearbyRoomsChannel);
     await androidPlugin?.createNotificationChannel(_broadcastsChannel);
+    await androidPlugin?.createNotificationChannel(_mentionsRepliesChannel);
 
     // 3. Initialize local notifications plugin.
     const initSettings = InitializationSettings(
@@ -196,7 +207,9 @@ class FCMService {
 
     final notification = message.notification;
     final android = message.notification?.android;
-    final isBroadcast = message.data['type'] == 'broadcast';
+    final String type = message.data['type'] ?? '';
+    final isBroadcast = type == 'broadcast';
+    final isMentionReply = type == 'mention' || type == 'reply';
 
     if (notification != null) {
       // For broadcasts: notify in-app listeners (shows a banner) AND
@@ -208,9 +221,28 @@ class FCMService {
         );
       }
 
-      // Show a system local notification for all types
-      final channelId = isBroadcast ? _broadcastsChannelId : _nearbyRoomsChannelId;
-      final channelName = isBroadcast ? _broadcastsChannel.name : _nearbyRoomsChannel.name;
+      // Route to the correct channel based on type.
+      final String channelId;
+      final String channelName;
+      final String? channelDescription;
+      final Importance importance;
+
+      if (isBroadcast) {
+        channelId = _broadcastsChannelId;
+        channelName = _broadcastsChannel.name;
+        channelDescription = _broadcastsChannel.description;
+        importance = Importance.max;
+      } else if (isMentionReply) {
+        channelId = _mentionsRepliesChannelId;
+        channelName = _mentionsRepliesChannel.name;
+        channelDescription = _mentionsRepliesChannel.description;
+        importance = Importance.high;
+      } else {
+        channelId = _nearbyRoomsChannelId;
+        channelName = _nearbyRoomsChannel.name;
+        channelDescription = _nearbyRoomsChannel.description;
+        importance = Importance.high;
+      }
 
       _localNotifications.show(
         notification.hashCode,
@@ -220,10 +252,8 @@ class FCMService {
           android: AndroidNotificationDetails(
             channelId,
             channelName,
-            channelDescription: isBroadcast
-                ? _broadcastsChannel.description
-                : _nearbyRoomsChannel.description,
-            importance: isBroadcast ? Importance.max : Importance.high,
+            channelDescription: channelDescription,
+            importance: importance,
             priority: Priority.high,
             icon: android?.smallIcon ?? '@mipmap/ic_launcher',
             playSound: true,
@@ -235,6 +265,7 @@ class FCMService {
             presentSound: true,
           ),
         ),
+        // For mention/reply and room notifications, payload is the roomId for tap navigation.
         payload: isBroadcast ? null : message.data['roomId'],
       );
     }
