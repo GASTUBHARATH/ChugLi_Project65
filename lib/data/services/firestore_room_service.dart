@@ -57,6 +57,7 @@ class FirestoreRoomService {
               // Participant count = number of unique UIDs
               final uids = List<String>.from(data['participantUids'] ?? []);
               data['participants'] = uids.isEmpty ? 1 : uids.length;
+              data['roomRadius'] = (data['roomRadius'] as num?)?.toDouble() ?? 0.5;
               return data;
             })
             .where((room) =>
@@ -78,6 +79,7 @@ class FirestoreRoomService {
       // Participant count = unique UIDs who have sent a message
       final uids = List<String>.from(data['participantUids'] ?? []);
       data['participants'] = uids.isEmpty ? 1 : uids.length;
+      data['roomRadius'] = (data['roomRadius'] as num?)?.toDouble() ?? 0.5;
       return data;
     });
   }
@@ -99,6 +101,7 @@ class FirestoreRoomService {
               );
               final uids = List<String>.from(data['participantUids'] ?? []);
               data['participants'] = uids.isEmpty ? 1 : uids.length;
+              data['roomRadius'] = (data['roomRadius'] as num?)?.toDouble() ?? 0.5;
               return data;
             }).toList());
   }
@@ -120,6 +123,7 @@ class FirestoreRoomService {
               );
               final uids = List<String>.from(data['participantUids'] ?? []);
               data['participants'] = uids.isEmpty ? 1 : uids.length;
+              data['roomRadius'] = (data['roomRadius'] as num?)?.toDouble() ?? 0.5;
               return data;
             }).toList());
   }
@@ -173,6 +177,7 @@ class FirestoreRoomService {
     required Duration expiryDuration,
     double? latitude,
     double? longitude,
+    double roomRadius = 0.5,
   }) async {
     final now = DateTime.now();
     final uid = _uid;
@@ -202,6 +207,7 @@ class FirestoreRoomService {
       'latitude': latitude,
       'longitude': longitude,
       'geohash': roomGeohash,
+      'roomRadius': roomRadius,
     });
 
     await _logActivity(

@@ -433,9 +433,10 @@ class _HomeFeedScreenState extends State<HomeFeedScreen> {
             final lat = (room['latitude'] as num?)?.toDouble();
             final lon = (room['longitude'] as num?)?.toDouble();
             if (userPos == null || lat == null || lon == null) return true;
-            return LocationService.instance
-                    .distanceInKm(userPos.latitude, userPos.longitude, lat, lon) <=
-                maxRadius;
+            final dist = LocationService.instance
+                    .distanceInKm(userPos.latitude, userPos.longitude, lat, lon);
+            final roomRadius = (room['roomRadius'] as num?)?.toDouble() ?? 0.5;
+            return dist <= maxRadius && dist <= roomRadius;
           }).toList();
 
           // Filter by category

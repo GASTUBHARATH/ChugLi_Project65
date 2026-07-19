@@ -127,7 +127,8 @@ class _ChangeRadiusScreenState extends State<ChangeRadiusScreen>
         }
 
         // Apply radius filter
-        if (distKm != null && distKm > maxKm) continue;
+        final roomRadius = (data['roomRadius'] as num?)?.toDouble() ?? 0.5;
+        if (distKm != null && (distKm > maxKm || distKm > roomRadius)) continue;
 
         data['_distanceKm'] = distKm;
         final uids = List<String>.from(data['participantUids'] ?? []);

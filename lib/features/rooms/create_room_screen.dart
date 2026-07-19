@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chugli_project65/data/services/firestore_room_service.dart';
 import 'package:chugli_project65/data/services/location_service.dart';
 
@@ -76,6 +77,10 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
           ? _customCategoryController.text.trim()
           : _selectedCategory!;
 
+      final prefs = await SharedPreferences.getInstance();
+      final radiusStr = prefs.getString('selected_radius') ?? '0.5km';
+      final double roomRadius = double.tryParse(radiusStr.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.5;
+
       await FirestoreRoomService.instance.createRoom(
         title: _titleController.text.trim(),
         category: categoryToSave,
@@ -83,6 +88,7 @@ class _CreateRoomScreenState extends State<CreateRoomScreen> {
         expiryDuration: expiryDuration,
         latitude: pos?.latitude,
         longitude: pos?.longitude,
+        roomRadius: roomRadius,
       );
 
       if (mounted) Navigator.pop(context);
